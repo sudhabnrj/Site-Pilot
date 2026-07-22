@@ -2,15 +2,13 @@ import fs from "fs";
 import path from "path";
 import { connectToDatabase } from "@/lib/mongodb";
 import { User, IUser } from "@/models/user.model";
+import { hashPassword } from "@/lib/auth/password";
 
-// File-backed persistent database path
 const DATA_DIR = path.join(process.cwd(), "data");
 const DB_FILE_PATH = path.join(DATA_DIR, "users-db.json");
 
-// In-Memory map synced with disk file
 const localUsersMap = new Map<string, any>();
 
-// Helper to initialize and load data from disk file
 function initFileDatabase() {
   try {
     if (!fs.existsSync(DATA_DIR)) {
@@ -23,7 +21,6 @@ function initFileDatabase() {
       localUsersMap.clear();
       for (const u of usersArray) {
         if (u && u.email) {
-          // Re-attach save method for file persistence
           attachSaveMethod(u);
           localUsersMap.set(u.email.toLowerCase(), u);
         }
@@ -59,14 +56,38 @@ function attachSaveMethod(userObj: any) {
   };
 }
 
-// Run initial load from disk on module import
 initFileDatabase();
+
+async function syncAdminToMongo() {
+  try {
+    await connectToDatabase();
+    const adminEmail = "sudhabnrj@gmail.com";
+    let admin = await User.findOne({ email: adminEmail });
+    if (!admin) {
+      const hashedPassword = await hashPassword("Sudhabnrj@123");
+      admin = await User.create({
+        firstName: "Sudha",
+        lastName: "Banerjee",
+        email: adminEmail,
+        password: hashedPassword,
+        role: "admin",
+        status: "active",
+        isEmailVerified: true,
+        provider: "local",
+      });
+      console.log("✅ [MongoDB Sync] Default Admin sudhabnrj@gmail.com created in MongoDB");
+    }
+  } catch {
+    // DB not reachable yet
+  }
+}
 
 export class UserRepository {
   static async findByEmail(email: string, includePassword = false) {
     const cleanEmail = email.toLowerCase();
     try {
       await connectToDatabase();
+      await syncAdminToMongo();
       let query = User.findOne({ email: cleanEmail });
       if (includePassword) {
         query = query.select("+password");
@@ -74,7 +95,7 @@ export class UserRepository {
       const user = await query.exec();
       if (user) return user;
     } catch {
-      // Fallback to persistent file DB
+      // MongoDB not connected
     }
 
     const memUser = localUsersMap.get(cleanEmail);
@@ -88,7 +109,7 @@ export class UserRepository {
       const user = await User.findById(id).exec();
       if (user) return user;
     } catch {
-      // Fallback to persistent file DB
+      // MongoDB not connected
     }
 
     for (const memUser of Array.from(localUsersMap.values())) {
@@ -108,7 +129,7 @@ export class UserRepository {
       }).exec();
       if (user) return user;
     } catch {
-      // Fallback
+      // MongoDB not connected
     }
 
     for (const memUser of Array.from(localUsersMap.values())) {
@@ -129,7 +150,7 @@ export class UserRepository {
       const user = await User.findOne({ emailVerificationToken: token }).exec();
       if (user) return user;
     } catch {
-      // Fallback
+      // MongoDB not connected
     }
 
     for (const memUser of Array.from(localUsersMap.values())) {
@@ -148,9 +169,10 @@ export class UserRepository {
         ...userData,
         email: cleanEmail,
       });
+      console.log(`✅ [MongoDB] Saved registered user '${cleanEmail}' directly to MongoDB database`);
       return user;
     } catch {
-      // Fallback to persistent file DB
+      // MongoDB not connected
     }
 
     const id = "user_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
@@ -190,7 +212,7 @@ export class UserRepository {
       const user = await User.findByIdAndUpdate(id, updateData, { new: true }).exec();
       if (user) return user;
     } catch {
-      // Fallback
+      // MongoDB not connected
     }
 
     const memUser = await this.findById(id);
