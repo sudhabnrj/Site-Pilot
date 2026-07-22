@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/sitepilot";
+const MONGODB_URI = process.env.MONGODB_URI;
 
 interface MongooseCache {
   conn: typeof mongoose | null;
@@ -19,6 +19,13 @@ if (!global.mongooseCache) {
 }
 
 export async function connectToDatabase(): Promise<typeof mongoose> {
+  if (!MONGODB_URI || MONGODB_URI.includes("127.0.0.1") || MONGODB_URI.includes("localhost")) {
+    const errorMsg =
+      "MongoDB Atlas URI is missing or pointing to local DB. Please add your MongoDB Atlas Cloud connection string (mongodb+srv://...) in .env.local";
+    console.error(`❌ [MongoDB Atlas Error]: ${errorMsg}`);
+    throw new Error(errorMsg);
+  }
+
   if (cached.conn && mongoose.connection.readyState === 1) {
     return cached.conn;
   }
@@ -26,18 +33,18 @@ export async function connectToDatabase(): Promise<typeof mongoose> {
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
-      serverSelectionTimeoutMS: 3000,
+      serverSelectionTimeoutMS: 5000,
     };
 
     cached.promise = mongoose
       .connect(MONGODB_URI, opts)
       .then((mongooseInstance) => {
-        console.log(`✅ [MongoDB Status] Connected successfully to: ${MONGODB_URI}`);
+        console.log(`✅ [MongoDB Atlas] Connected successfully to Cloud Database!`);
         return mongooseInstance;
       })
       .catch((err) => {
         cached.promise = null;
-        console.warn(`⚠️ [MongoDB Status] Connection failed (${err.message}) on: ${MONGODB_URI}`);
+        console.error(`❌ [MongoDB Atlas Connection Failed]: ${err.message}`);
         throw err;
       });
   }
