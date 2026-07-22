@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { geistFont, interFont } from "@/lib/fonts";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { StoreProvider } from "@/components/providers/store-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -33,7 +34,9 @@ export default function RootLayout({
         />
       </head>
       <body className={`${geistFont.variable} ${interFont.variable}`}>
-        <DashboardShell>{children}</DashboardShell>
+        <StoreProvider>
+          <DashboardShell>{children}</DashboardShell>
+        </StoreProvider>
       </body>
     </html>
   );

@@ -1,30 +1,64 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { SignUpCard } from "@/components/auth/sign-up-card";
+import { useAppDispatch } from "@/store";
+import { setCredentials } from "@/store/slices/auth-slice";
+import { RegisterInput } from "@/validators/auth.validator";
 
 export default function SignUpPage() {
-  const handleSignUp = (name: string, email: string, pass: string, agree: boolean) => {
-    if (!agree) {
-      alert("Please agree to the Terms of Service and Privacy Policy to continue.");
-      return;
+  const router = useRouter();
+  const dispatch = useAppDispatch();
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
+
+  const handleSignUp = async (data: RegisterInput) => {
+    setIsLoading(true);
+    setServerError(null);
+
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      const result = await res.json();
+
+      if (!res.ok || !result.success) {
+        setServerError(result.message || "Registration failed. Please try again.");
+        setIsLoading(false);
+        return;
+      }
+
+      // Update Redux state
+      dispatch(setCredentials({ user: result.user }));
+
+      // Redirect to Dashboard (/)
+      router.push("/");
+      router.refresh();
+    } catch (err: any) {
+      setServerError("Network error. Please check your connection and try again.");
+      setIsLoading(false);
     }
-    alert(`Creating account for ${name} (${email})...`);
   };
 
   const handleSocialLogin = (provider: string) => {
-    alert(`Redirecting to ${provider} OAuth authentication...`);
+    alert(`OAuth registration with ${provider} is coming soon!`);
   };
 
   const handleLogIn = () => {
-    alert("Navigating to sign in page...");
+    router.push("/login");
   };
 
   const handleTermsClick = () => {
-    alert("Loading Terms of Service...");
+    alert("Terms of Service: By signing up for AuditAI you agree to system guidelines.");
   };
 
   const handlePrivacyClick = () => {
-    alert("Loading Privacy Policy...");
+    alert("Privacy Policy: AuditAI protects your data and privacy.");
   };
 
   return (
@@ -36,6 +70,8 @@ export default function SignUpPage() {
         onLogIn={handleLogIn}
         onTermsClick={handleTermsClick}
         onPrivacyClick={handlePrivacyClick}
+        serverError={serverError}
+        isLoading={isLoading}
       />
 
       {/* Subtle system status bar */}

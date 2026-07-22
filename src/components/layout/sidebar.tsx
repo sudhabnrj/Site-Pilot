@@ -1,9 +1,12 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { NavItem } from "@/components/ui/nav-item";
 import { BRAND, SIDEBAR_NAV_ITEMS, SIDEBAR_BOTTOM_ITEMS } from "@/constants/navigation";
 import { Brain, Zap, ChevronLeft, ChevronRight, LogOut } from "lucide-react";
+import { useAppDispatch, useAppSelector } from "@/store";
+import { logout } from "@/store/slices/auth-slice";
 
 interface SidebarProps {
   className?: string;
@@ -12,6 +15,28 @@ interface SidebarProps {
 }
 
 export function Sidebar({ className, isCollapsed = false, onToggle }: SidebarProps) {
+  const router = useRouter();
+  const dispatch = useAppDispatch();
+  const user = useAppSelector((state) => state.auth.user);
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {
+      // Ignore API errors
+    } finally {
+      dispatch(logout());
+      router.push("/login");
+      router.refresh();
+    }
+  };
+
+  const initials = user
+    ? `${user.firstName[0] || ""}${user.lastName[0] || ""}`.toUpperCase()
+    : "JD";
+  const fullName = user ? `${user.firstName} ${user.lastName}` : "John Doe";
+  const userEmail = user?.email || "john@example.com";
+
   return (
     <aside
       className={cn(
@@ -93,14 +118,17 @@ export function Sidebar({ className, isCollapsed = false, onToggle }: SidebarPro
       <div className="border-t border-slate-200 pt-4">
         {isCollapsed ? (
           <div className="flex justify-center group relative">
-            <div className="h-9 w-9 rounded-full overflow-hidden border border-slate-300 shadow-sm cursor-pointer">
+            <div
+              onClick={handleLogout}
+              className="h-9 w-9 rounded-full overflow-hidden border border-slate-300 shadow-sm cursor-pointer"
+            >
               <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600 text-xs font-bold text-white">
-                JD
+                {initials}
               </div>
             </div>
             <div className="absolute left-full ml-3 p-2 bg-slate-900 text-white text-xs rounded opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-lg">
-              <p className="font-semibold">John Doe</p>
-              <p className="text-[10px] text-slate-400">Admin</p>
+              <p className="font-semibold">{fullName}</p>
+              <p className="text-[10px] text-slate-400">Click to Logout</p>
             </div>
           </div>
         ) : (
@@ -108,17 +136,19 @@ export function Sidebar({ className, isCollapsed = false, onToggle }: SidebarPro
             <div className="flex items-center gap-3 min-w-0">
               <div className="h-9 w-9 shrink-0 rounded-full overflow-hidden border border-slate-300 shadow-sm">
                 <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600 text-xs font-bold text-white">
-                  JD
+                  {initials}
                 </div>
               </div>
               <div className="flex flex-col min-w-0">
-                <span className="text-xs font-semibold text-slate-900 truncate">John Doe</span>
-                <span className="text-[10px] text-muted-foreground truncate">john@example.com</span>
+                <span className="text-xs font-semibold text-slate-900 truncate">{fullName}</span>
+                <span className="text-[10px] text-muted-foreground truncate">{userEmail}</span>
               </div>
             </div>
             <button
-              className="text-muted-foreground hover:text-red-600 transition-colors shrink-0 p-1 hover:bg-slate-100 rounded"
+              onClick={handleLogout}
+              className="text-muted-foreground hover:text-red-600 transition-colors shrink-0 p-1.5 hover:bg-red-50 rounded-lg cursor-pointer"
               aria-label="Logout"
+              title="Sign Out"
             >
               <LogOut className="h-4 w-4" />
             </button>

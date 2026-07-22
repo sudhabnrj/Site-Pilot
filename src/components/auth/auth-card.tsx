@@ -1,16 +1,21 @@
 "use client";
 
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { AuthSocialButton } from "./auth-social-button";
 import { AuthTextField } from "./auth-text-field";
-import { Mail, Lock, LogIn } from "lucide-react";
+import { Mail, Lock, LogIn, Loader2 } from "lucide-react";
 import { GlassCard } from "@/components/ui/glass-card";
+import { loginSchema, type LoginInput } from "@/validators/auth.validator";
 
 interface AuthCardProps {
-  onSignIn?: (email: string, pass: string) => void;
+  onSignIn?: (data: LoginInput) => Promise<void> | void;
   onSocialLogin?: (provider: string) => void;
   onForgotPassword?: () => void;
   onSignUp?: () => void;
+  serverError?: string | null;
+  isLoading?: boolean;
 }
 
 export function AuthCard({
@@ -18,13 +23,30 @@ export function AuthCard({
   onSocialLogin,
   onForgotPassword,
   onSignUp,
+  serverError,
+  isLoading = false,
 }: AuthCardProps) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm<LoginInput>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSignIn?.(email, password);
+  const emailValue = watch("email");
+  const passwordValue = watch("password");
+
+  const onSubmit = async (data: LoginInput) => {
+    if (onSignIn) {
+      await onSignIn(data);
+    }
   };
 
   return (
@@ -54,6 +76,14 @@ export function AuthCard({
         </div>
       </div>
 
+      {/* Global Server Error Banner */}
+      {serverError && (
+        <div className="bg-red-50 border border-red-200 text-red-700 text-xs font-bold px-4 py-3 rounded-xl flex items-center gap-2 animate-in fade-in">
+          <span className="h-2 w-2 rounded-full bg-red-500 shrink-0" />
+          <span>{serverError}</span>
+        </div>
+      )}
+
       {/* Social Login Integrations */}
       <div className="grid grid-cols-2 gap-3 select-none">
         <AuthSocialButton
@@ -78,16 +108,17 @@ export function AuthCard({
       </div>
 
       {/* Credentials Form */}
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
         <AuthTextField
           id="email"
           label="Email Address"
           placeholder="name@company.com"
           type="email"
           icon={Mail}
-          value={email}
-          onChange={setEmail}
-          required
+          value={emailValue}
+          onChange={(val) => setValue("email", val, { shouldValidate: true })}
+          error={errors.email?.message}
+          disabled={isLoading}
         />
         
         <AuthTextField
@@ -96,9 +127,10 @@ export function AuthCard({
           placeholder="••••••••"
           type="password"
           icon={Lock}
-          value={password}
-          onChange={setPassword}
-          required
+          value={passwordValue}
+          onChange={(val) => setValue("password", val, { shouldValidate: true })}
+          error={errors.password?.message}
+          disabled={isLoading}
           rightElement={
             <button
               type="button"
@@ -113,10 +145,20 @@ export function AuthCard({
         {/* Submit Action */}
         <button
           type="submit"
-          className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-md hover:shadow-lg active:scale-95 transition-all duration-200 flex items-center justify-center gap-2 select-none border border-blue-600"
+          disabled={isLoading}
+          className="w-full mt-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-70 text-white font-bold py-3.5 rounded-xl shadow-md hover:shadow-lg active:scale-95 transition-all duration-200 flex items-center justify-center gap-2 select-none border border-blue-600 cursor-pointer"
         >
-          <span>Sign In</span>
-          <LogIn className="h-4 w-4 shrink-0 text-white/90" />
+          {isLoading ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin text-white" />
+              <span>Signing In...</span>
+            </>
+          ) : (
+            <>
+              <span>Sign In</span>
+              <LogIn className="h-4 w-4 shrink-0 text-white/90" />
+            </>
+          )}
         </button>
       </form>
 
@@ -125,6 +167,7 @@ export function AuthCard({
         <p className="text-xs font-semibold text-slate-400">
           Don't have an account?{" "}
           <button
+            type="button"
             onClick={onSignUp}
             className="text-blue-600 font-extrabold hover:underline cursor-pointer"
           >

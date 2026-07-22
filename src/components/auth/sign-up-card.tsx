@@ -1,17 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { AuthSocialButton } from "./auth-social-button";
 import { AuthTextField } from "./auth-text-field";
-import { Mail, Lock, User, Shield, ArrowRight } from "lucide-react";
+import { Mail, Lock, User, Shield, ArrowRight, Loader2 } from "lucide-react";
 import { GlassCard } from "@/components/ui/glass-card";
+import { registerSchema, type RegisterInput } from "@/validators/auth.validator";
 
 interface SignUpCardProps {
-  onSignUp?: (name: string, email: string, pass: string, agree: boolean) => void;
+  onSignUp?: (data: RegisterInput) => Promise<void> | void;
   onSocialLogin?: (provider: string) => void;
   onLogIn?: () => void;
   onTermsClick?: () => void;
   onPrivacyClick?: () => void;
+  serverError?: string | null;
+  isLoading?: boolean;
 }
 
 export function SignUpCard({
@@ -20,15 +24,35 @@ export function SignUpCard({
   onLogIn,
   onTermsClick,
   onPrivacyClick,
+  serverError,
+  isLoading = false,
 }: SignUpCardProps) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [agree, setAgree] = useState(false);
+  const {
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm<RegisterInput>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    },
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSignUp?.(name, email, password, agree);
+  const firstNameVal = watch("firstName");
+  const lastNameVal = watch("lastName");
+  const emailVal = watch("email");
+  const passwordVal = watch("password");
+  const confirmPasswordVal = watch("confirmPassword");
+
+  const onSubmit = async (data: RegisterInput) => {
+    if (onSignUp) {
+      await onSignUp(data);
+    }
   };
 
   return (
@@ -51,48 +75,83 @@ export function SignUpCard({
         </div>
       </div>
 
+      {/* Global Server Error */}
+      {serverError && (
+        <div className="bg-red-50 border border-red-200 text-red-700 text-xs font-bold px-4 py-3 rounded-xl flex items-center gap-2 animate-in fade-in">
+          <span className="h-2 w-2 rounded-full bg-red-500 shrink-0" />
+          <span>{serverError}</span>
+        </div>
+      )}
+
       {/* Form */}
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <AuthTextField
-          id="name"
-          label="Full Name"
-          placeholder="John Doe"
-          type="text"
-          icon={User}
-          value={name}
-          onChange={setName}
-          required
-        />
-        
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+        <div className="grid grid-cols-2 gap-3">
+          <AuthTextField
+            id="firstName"
+            label="First Name"
+            placeholder="John"
+            type="text"
+            icon={User}
+            value={firstNameVal}
+            onChange={(val) => setValue("firstName", val, { shouldValidate: true })}
+            error={errors.firstName?.message}
+            disabled={isLoading}
+          />
+          <AuthTextField
+            id="lastName"
+            label="Last Name"
+            placeholder="Doe"
+            type="text"
+            icon={User}
+            value={lastNameVal}
+            onChange={(val) => setValue("lastName", val, { shouldValidate: true })}
+            error={errors.lastName?.message}
+            disabled={isLoading}
+          />
+        </div>
+
         <AuthTextField
           id="email"
           label="Work Email"
           placeholder="name@company.com"
           type="email"
           icon={Mail}
-          value={email}
-          onChange={setEmail}
-          required
+          value={emailVal}
+          onChange={(val) => setValue("email", val, { shouldValidate: true })}
+          error={errors.email?.message}
+          disabled={isLoading}
         />
-        
+
         <AuthTextField
           id="password"
           label="Password"
           placeholder="••••••••"
           type="password"
           icon={Lock}
-          value={password}
-          onChange={setPassword}
-          required
+          value={passwordVal}
+          onChange={(val) => setValue("password", val, { shouldValidate: true })}
+          error={errors.password?.message}
+          disabled={isLoading}
+        />
+
+        <AuthTextField
+          id="confirmPassword"
+          label="Confirm Password"
+          placeholder="••••••••"
+          type="password"
+          icon={Lock}
+          value={confirmPasswordVal}
+          onChange={(val) => setValue("confirmPassword", val, { shouldValidate: true })}
+          error={errors.confirmPassword?.message}
+          disabled={isLoading}
         />
 
         {/* Terms and conditions checkbox */}
-        <label className="flex items-start gap-3 cursor-pointer group mt-2 select-none">
+        <label className="flex items-start gap-3 cursor-pointer group mt-1 select-none">
           <input
             type="checkbox"
-            checked={agree}
-            onChange={(e) => setAgree(e.target.checked)}
             required
+            disabled={isLoading}
             className="mt-0.5 peer h-4 w-4 rounded border-slate-200 bg-slate-50 text-blue-600 focus:ring-4 focus:ring-blue-100 transition-all cursor-pointer"
           />
           <span className="text-[11px] font-semibold text-slate-400 leading-tight">
@@ -119,10 +178,20 @@ export function SignUpCard({
         {/* Submit */}
         <button
           type="submit"
-          className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-md hover:shadow-lg active:scale-95 transition-all duration-200 flex items-center justify-center gap-2 select-none border border-blue-600"
+          disabled={isLoading}
+          className="w-full mt-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-70 text-white font-bold py-3.5 rounded-xl shadow-md hover:shadow-lg active:scale-95 transition-all duration-200 flex items-center justify-center gap-2 select-none border border-blue-600 cursor-pointer"
         >
-          <span>Create Account</span>
-          <ArrowRight className="h-4 w-4 shrink-0 text-white/90" />
+          {isLoading ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin text-white" />
+              <span>Creating Account...</span>
+            </>
+          ) : (
+            <>
+              <span>Create Account</span>
+              <ArrowRight className="h-4 w-4 shrink-0 text-white/90" />
+            </>
+          )}
         </button>
       </form>
 
@@ -154,6 +223,7 @@ export function SignUpCard({
         <p className="text-xs font-semibold text-slate-400">
           Already have an account?{" "}
           <button
+            type="button"
             onClick={onLogIn}
             className="text-blue-600 font-extrabold hover:underline cursor-pointer"
           >

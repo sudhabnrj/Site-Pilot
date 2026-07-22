@@ -1,0 +1,23 @@
+[
+  {
+    "_id": "user_1784727353174_s05pu",
+    "id": "user_1784727353174_s05pu",
+    "firstName": "Sudha",
+    "lastName": "Banerjee",
+    "email": "sudhabnrj@gmail.com",
+    "password": "$2b$12$Rx5Rza4m7Ct/sBFn9EfHuuohwpYboRNvh0xIXBx5AouZO/4JagtmW",
+    "phone": "",
+    "profileImage": "",
+    "role": "admin",
+    "status": "active",
+    "isEmailVerified": true,
+    "emailVerificationToken": null,
+    "passwordResetToken": null,
+    "passwordResetExpires": null,
+    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJ1c2VyXzE3ODQ3MjczNTMxNzRfczA1cHUiLCJlbWFpbCI6InN1ZGhhYm5yakBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ3MjczODUsImV4cCI6MTc4NzMxOTM4NX0.1CyCG9RNGG6Cn6JbOqlW_nPjIb4s4-WaUNGUUIB-grs",
+    "lastLogin": "2026-07-22T13:36:25.030Z",
+    "provider": "local",
+    "createdAt": "2026-07-22T13:35:53.174Z",
+    "updatedAt": "2026-07-22T13:36:25.030Z"
+  }
+]

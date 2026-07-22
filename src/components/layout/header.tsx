@@ -1,9 +1,12 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Globe, Bell, Moon, Sun, Menu, ChevronDown, Plus, LogOut, User, Settings, CreditCard } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+import { useAppDispatch, useAppSelector } from "@/store";
+import { logout } from "@/store/slices/auth-slice";
 
 interface HeaderProps {
   onMobileMenuToggle?: () => void;
@@ -13,6 +16,10 @@ interface HeaderProps {
 const MOCK_WEBSITES = ["https://example.com", "https://my-saas.app", "https://blog.dev"];
 
 export function Header({ onMobileMenuToggle, className }: HeaderProps) {
+  const router = useRouter();
+  const dispatch = useAppDispatch();
+  const user = useAppSelector((state) => state.auth.user);
+
   const [selectedWebsite, setSelectedWebsite] = useState(MOCK_WEBSITES[0]);
   const [isWebsitesOpen, setIsWebsitesOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -21,6 +28,25 @@ export function Header({ onMobileMenuToggle, className }: HeaderProps) {
 
   const websiteRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  const handleLogout = async () => {
+    setIsUserMenuOpen(false);
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {
+      // Ignore API errors
+    } finally {
+      dispatch(logout());
+      router.push("/login");
+      router.refresh();
+    }
+  };
+
+  const initials = user
+    ? `${user.firstName[0] || ""}${user.lastName[0] || ""}`.toUpperCase()
+    : "JD";
+  const fullName = user ? `${user.firstName} ${user.lastName}` : "John Doe";
+  const userEmail = user?.email || "john@example.com";
 
   // Close menus when clicking outside
   useEffect(() => {
@@ -57,7 +83,7 @@ export function Header({ onMobileMenuToggle, className }: HeaderProps) {
         <div ref={websiteRef} className="relative shrink-0">
           <button
             onClick={() => setIsWebsitesOpen(!isWebsitesOpen)}
-            className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition-colors"
+            className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition-colors cursor-pointer"
             aria-haspopup="listbox"
             aria-expanded={isWebsitesOpen}
           >
@@ -84,7 +110,7 @@ export function Header({ onMobileMenuToggle, className }: HeaderProps) {
                         setIsWebsitesOpen(false);
                       }}
                       className={cn(
-                        "w-full text-left rounded-lg px-3 py-2 text-xs font-medium transition-colors truncate",
+                        "w-full text-left rounded-lg px-3 py-2 text-xs font-medium transition-colors truncate cursor-pointer",
                         site === selectedWebsite
                           ? "bg-blue-50 text-blue-700 font-bold"
                           : "text-slate-700 hover:bg-slate-50"
@@ -97,7 +123,7 @@ export function Header({ onMobileMenuToggle, className }: HeaderProps) {
                 <div className="my-1 border-t border-slate-100" />
                 <button
                   onClick={() => setIsWebsitesOpen(false)}
-                  className="flex w-full items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-blue-600 hover:bg-blue-50 transition-colors"
+                  className="flex w-full items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
                 >
                   <Plus className="h-3.5 w-3.5" />
                   Add website
@@ -118,7 +144,7 @@ export function Header({ onMobileMenuToggle, className }: HeaderProps) {
         </div>
 
         {/* Audit Website Button */}
-        <button className="hidden sm:inline-flex shrink-0 items-center justify-center rounded-full bg-blue-600 px-5 py-2 text-sm font-bold text-white shadow-sm hover:bg-blue-700 active:scale-95 transition-all">
+        <button className="hidden sm:inline-flex shrink-0 items-center justify-center rounded-full bg-blue-600 px-5 py-2 text-sm font-bold text-white shadow-sm hover:bg-blue-700 active:scale-95 transition-all cursor-pointer">
           Audit Website
         </button>
       </div>
@@ -128,7 +154,7 @@ export function Header({ onMobileMenuToggle, className }: HeaderProps) {
         {/* Theme toggle */}
         <button
           onClick={() => setIsDarkMode(!isDarkMode)}
-          className="text-muted-foreground transition-colors hover:text-blue-600 p-1.5 hover:bg-slate-50 rounded-lg"
+          className="text-muted-foreground transition-colors hover:text-blue-600 p-1.5 hover:bg-slate-50 rounded-lg cursor-pointer"
           aria-label="Toggle dark mode"
         >
           {isDarkMode ? <Sun className="h-5 w-5 text-orange-500" /> : <Moon className="h-5 w-5" />}
@@ -137,7 +163,7 @@ export function Header({ onMobileMenuToggle, className }: HeaderProps) {
         {/* Notifications */}
         <button
           onClick={() => setHasNotifications(false)}
-          className="text-muted-foreground transition-colors hover:text-blue-600 p-1.5 hover:bg-slate-50 rounded-lg relative"
+          className="text-muted-foreground transition-colors hover:text-blue-600 p-1.5 hover:bg-slate-50 rounded-lg relative cursor-pointer"
           aria-label="Notifications"
         >
           <Bell className="h-5 w-5" />
@@ -150,13 +176,13 @@ export function Header({ onMobileMenuToggle, className }: HeaderProps) {
         <div ref={userMenuRef} className="relative">
           <button
             onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-            className="h-8 w-8 overflow-hidden rounded-full border border-slate-300 shadow-sm hover:border-slate-400 transition-colors focus:outline-none"
+            className="h-8 w-8 overflow-hidden rounded-full border border-slate-300 shadow-sm hover:border-slate-400 transition-colors focus:outline-none cursor-pointer"
             aria-haspopup="true"
             aria-expanded={isUserMenuOpen}
             aria-label="User menu"
           >
             <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600 text-xs font-bold text-white">
-              JD
+              {initials}
             </div>
           </button>
 
@@ -170,35 +196,44 @@ export function Header({ onMobileMenuToggle, className }: HeaderProps) {
                 className="absolute right-0 mt-2 w-56 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg ring-1 ring-black/5 z-50 focus:outline-none"
               >
                 <div className="px-3 py-2">
-                  <p className="text-xs font-semibold text-slate-950">John Doe</p>
-                  <p className="text-[10px] text-muted-foreground truncate">john@example.com</p>
+                  <p className="text-xs font-semibold text-slate-950">{fullName}</p>
+                  <p className="text-[10px] text-muted-foreground truncate">{userEmail}</p>
                 </div>
                 <div className="my-1 border-t border-slate-100" />
                 <button
-                  onClick={() => setIsUserMenuOpen(false)}
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 transition-colors"
+                  onClick={() => {
+                    setIsUserMenuOpen(false);
+                    router.push("/settings");
+                  }}
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
                 >
                   <User className="h-3.5 w-3.5 text-slate-400" />
                   My Profile
                 </button>
                 <button
-                  onClick={() => setIsUserMenuOpen(false)}
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 transition-colors"
+                  onClick={() => {
+                    setIsUserMenuOpen(false);
+                    router.push("/settings");
+                  }}
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
                 >
                   <Settings className="h-3.5 w-3.5 text-slate-400" />
                   Settings
                 </button>
                 <button
-                  onClick={() => setIsUserMenuOpen(false)}
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 transition-colors"
+                  onClick={() => {
+                    setIsUserMenuOpen(false);
+                    alert("Billing portal coming soon!");
+                  }}
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
                 >
                   <CreditCard className="h-3.5 w-3.5 text-slate-400" />
                   Billing
                 </button>
                 <div className="my-1 border-t border-slate-100" />
                 <button
-                  onClick={() => setIsUserMenuOpen(false)}
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 transition-colors font-medium"
+                  onClick={handleLogout}
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 transition-colors font-medium cursor-pointer"
                 >
                   <LogOut className="h-3.5 w-3.5 text-red-500" />
                   Logout
