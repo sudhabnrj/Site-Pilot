@@ -84,7 +84,7 @@ export async function DELETE(req: Request, context: { params: Promise<{ id: stri
   }
 }
 
-// POST: Re-run audit for an existing report
+// POST: Re-run audit OR apply fix for a report
 export async function POST(req: Request, context: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await context.params;
@@ -98,6 +98,41 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
         { success: false, message: "Audit report not found." },
         { status: 404 }
       );
+    }
+
+    // Try to parse request body to see if it is a fix action
+    let body: any = {};
+    try {
+      body = await req.json();
+    } catch {
+      // Empty body is fine (e.g. standard rerun scan)
+    }
+
+    if (body.action === "fix") {
+      const { recommendationId, issueKeyword } = body;
+
+      // 1. Filter out the recommendation
+      if (recommendationId) {
+        existingReport.recommendations = existingReport.recommendations.filter(
+          (r) => r.id !== recommendationId
+        );
+      }
+
+      // 2. Filter out the matching issue
+      if (issueKeyword) {
+        const keyword = issueKeyword.toLowerCase();
+        existingReport.issues = existingReport.issues.filter(
+          (i) => !i.issue.toLowerCase().includes(keyword) && !keyword.includes(i.issue.toLowerCase())
+        );
+      }
+
+      await existingReport.save();
+
+      return NextResponse.json({
+        success: true,
+        message: "Issue removed from database successfully.",
+        report: existingReport,
+      });
     }
 
     // Re-run audit
@@ -117,7 +152,7 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
     });
   } catch (error: any) {
     return NextResponse.json(
-      { success: false, message: error.message || "Failed to re-run audit." },
+      { success: false, message: error.message || "Failed to process request." },
       { status: 500 }
     );
   }

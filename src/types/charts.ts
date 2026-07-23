@@ -3,6 +3,7 @@ export interface PerformanceDataPoint {
   lcp: number;
   cls: number;
   fcp: number;
+  responseTime?: number;
 }
 
 export interface ChartSeries {

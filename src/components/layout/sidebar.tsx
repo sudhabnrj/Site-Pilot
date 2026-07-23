@@ -55,6 +55,39 @@ export function Sidebar({ className, isCollapsed = false, onToggle }: SidebarPro
   const fullName = displayName;
   const userEmail = user?.email || "";
 
+  const userPlan = isAdmin
+    ? "admin"
+    : user?.plan || (typeof window !== "undefined" ? (localStorage.getItem("user_plan") as any) : null) || "starter";
+
+  const getPlanBadge = () => {
+    if (isAdmin) {
+      return (
+        <span className="mt-0.5 inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-xs">
+          Admin Plan
+        </span>
+      );
+    }
+    if (userPlan === "enterprise") {
+      return (
+        <span className="mt-0.5 inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-slate-900 text-white shadow-xs">
+          Enterprise Plan
+        </span>
+      );
+    }
+    if (userPlan === "pro") {
+      return (
+        <span className="mt-0.5 inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-blue-600 text-white shadow-xs">
+          Pro Plan
+        </span>
+      );
+    }
+    return (
+      <span className="mt-0.5 inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-slate-200 text-slate-700">
+        Starter Plan
+      </span>
+    );
+  };
+
   return (
     <aside
       className={cn(
@@ -70,11 +103,11 @@ export function Sidebar({ className, isCollapsed = false, onToggle }: SidebarPro
             <Brain className="h-5 w-5 text-white" aria-hidden="true" />
           </div>
           {!isCollapsed && (
-            <div className="flex flex-col">
+            <div className="flex flex-col items-start">
               <h1 className="text-md font-black leading-tight tracking-tight text-blue-700">
                 {BRAND.name}
               </h1>
-              <p className="text-[10px] font-medium text-muted-foreground">{BRAND.plan}</p>
+              {getPlanBadge()}
             </div>
           )}
         </div>
@@ -109,7 +142,8 @@ export function Sidebar({ className, isCollapsed = false, onToggle }: SidebarPro
         <div className="mt-auto pt-4 pb-4">
           {isCollapsed ? (
             <button
-              className="flex h-10 w-10 mx-auto items-center justify-center rounded-full bg-blue-600 text-white shadow-md hover:bg-blue-700 active:scale-95 transition-all relative group"
+              onClick={() => router.push("/upgrade")}
+              className="flex h-10 w-10 mx-auto items-center justify-center rounded-full bg-blue-600 text-white shadow-md hover:bg-blue-700 active:scale-95 transition-all relative group cursor-pointer"
               aria-label="Upgrade to Pro"
             >
               <Zap className="h-4 w-4" aria-hidden="true" />
@@ -126,7 +160,10 @@ export function Sidebar({ className, isCollapsed = false, onToggle }: SidebarPro
               <p className="mt-1 text-xs font-medium text-blue-50 leading-relaxed">
                 Get unlimited audits, deep AI recommendations, and PDF exports.
               </p>
-              <button className="mt-3 w-full rounded-full bg-white py-2 text-xs font-bold text-blue-700 hover:bg-blue-50 active:scale-95 transition-all shadow-sm cursor-pointer">
+              <button
+                onClick={() => router.push("/upgrade")}
+                className="mt-3 w-full rounded-full bg-white py-2 text-xs font-bold text-blue-700 hover:bg-blue-50 active:scale-95 transition-all shadow-sm cursor-pointer"
+              >
                 Upgrade Now
               </button>
             </div>

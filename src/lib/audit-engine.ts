@@ -295,6 +295,50 @@ export class AuditEngine {
       });
     }
 
+    // Check missing html lang attribute
+    const hasHtmlLang = /<html[^>]*lang=["']/i.test(html);
+    if (!hasHtmlLang) {
+      accessibilityScore -= 15;
+      issues.push({
+        id: `iss-a11y-${Date.now()}-3`,
+        priority: "medium",
+        category: "Accessibility",
+        issue: "Missing HTML lang attribute",
+        page: "/",
+        impact: "-15 pts",
+        status: "open",
+      });
+      recommendations.push({
+        id: `rec-a11y-2`,
+        title: "Declare language on html tag",
+        description: "Add a lang attribute to the <html> tag (e.g. lang='en') to enable proper speech synthesis.",
+        severity: "medium",
+        icon: "Code",
+      });
+    }
+
+    // Check for button text
+    const buttonsWithoutText = (html.match(/<button[^>]*>\s*<\/button>/gi) || []).length;
+    if (buttonsWithoutText > 0) {
+      accessibilityScore -= 10;
+      issues.push({
+        id: `iss-a11y-${Date.now()}-4`,
+        priority: "high",
+        category: "Accessibility",
+        issue: `Empty or unlabeled button elements detected (${buttonsWithoutText} instances)`,
+        page: "/",
+        impact: "-10 pts",
+        status: "open",
+      });
+      recommendations.push({
+        id: `rec-a11y-3`,
+        title: "Provide names for icon buttons",
+        description: "Add textual content or an aria-label attribute to all button elements for accessibility.",
+        severity: "high",
+        icon: "Keyboard",
+      });
+    }
+
     // 5. Security Inspection
     let securityScore = 100;
     if (!isHttps) {
@@ -353,9 +397,122 @@ export class AuditEngine {
       });
     }
 
-    // Best Practices & Mobile
+    // 6. Mobile Usability Inspection
+    let mobileScore = 100;
+
+    if (!hasViewport) {
+      mobileScore -= 30;
+      issues.push({
+        id: `iss-mob-${Date.now()}-1`,
+        priority: "critical",
+        category: "Mobile",
+        issue: "Missing responsive viewport meta tag",
+        page: "/",
+        impact: "-30 pts",
+        status: "open",
+      });
+    }
+
+    // Check for fixed-width containers
+    const hasFixedWidth = /width\s*:\s*\d{4,}px/i.test(html);
+    if (hasFixedWidth) {
+      mobileScore -= 15;
+      issues.push({
+        id: `iss-mob-${Date.now()}-2`,
+        priority: "high",
+        category: "Mobile",
+        issue: "Fixed-width containers detected (causes horizontal scroll on mobile)",
+        page: "/",
+        impact: "-15 pts",
+        status: "open",
+      });
+    }
+
+    // Check for small font sizes
+    const smallFonts = html.match(/font-size\s*:\s*(\d+)px/gi) || [];
+    const tinyFonts = smallFonts.filter((f) => {
+      const size = parseInt(f.replace(/[^0-9]/g, ""));
+      return size > 0 && size < 12;
+    });
+    if (tinyFonts.length > 0) {
+      mobileScore -= 10;
+      issues.push({
+        id: `iss-mob-${Date.now()}-3`,
+        priority: "medium",
+        category: "Mobile",
+        issue: `Text too small to read on mobile (${tinyFonts.length} elements < 12px)`,
+        page: "/",
+        impact: "-10 pts",
+        status: "open",
+      });
+    }
+
+    // Check for tap target sizing
+    const smallButtons = (html.match(/padding\s*:\s*[0-2]px/gi) || []).length;
+    if (smallButtons > 0) {
+      mobileScore -= 10;
+      issues.push({
+        id: `iss-mob-${Date.now()}-4`,
+        priority: "high",
+        category: "Mobile",
+        issue: "Tap targets too close / too small for touch interaction",
+        page: "/",
+        impact: "-10 pts",
+        status: "open",
+      });
+    }
+
+    // Check for non-responsive images
+    const imgsWithoutResponsive = imgTags.filter(
+      (tag) => !/max-width|srcset|sizes|width:\s*100%/i.test(tag)
+    );
+    if (imgsWithoutResponsive.length > 2) {
+      mobileScore -= 10;
+      issues.push({
+        id: `iss-mob-${Date.now()}-5`,
+        priority: "medium",
+        category: "Mobile",
+        issue: `Non-responsive images detected (${imgsWithoutResponsive.length} without srcset/max-width)`,
+        page: "/",
+        impact: "-10 pts",
+        status: "open",
+      });
+    }
+
+    // Check for media queries (responsive CSS)
+    const hasMediaQueries = /@media\s*\(/i.test(html);
+    if (!hasMediaQueries) {
+      mobileScore -= 15;
+      issues.push({
+        id: `iss-mob-${Date.now()}-6`,
+        priority: "high",
+        category: "Mobile",
+        issue: "No CSS media queries found (no responsive breakpoints)",
+        page: "/",
+        impact: "-15 pts",
+        status: "open",
+      });
+    }
+
+    // Check for horizontal scroll risk
+    const hasOverflowHidden = /overflow-x\s*:\s*hidden/i.test(html);
+    if (!hasOverflowHidden && hasFixedWidth) {
+      mobileScore -= 5;
+      issues.push({
+        id: `iss-mob-${Date.now()}-7`,
+        priority: "low",
+        category: "Mobile",
+        issue: "Content wider than viewport (horizontal scrolling likely on mobile)",
+        page: "/",
+        impact: "-5 pts",
+        status: "open",
+      });
+    }
+
+    mobileScore = Math.max(10, Math.min(100, mobileScore));
+
+    // Best Practices
     const bestPracticesScore = Math.max(60, Math.floor((performanceScore + securityScore) / 2));
-    const mobileScore = hasViewport ? Math.max(70, performanceScore) : 40;
 
     // Clamp scores 0..100
     seoScore = Math.max(10, Math.min(100, seoScore));

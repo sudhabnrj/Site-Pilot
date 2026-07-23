@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { GlassCard } from "@/components/ui/glass-card";
 import { AlertTriangle, Image, Layout, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -21,10 +22,17 @@ interface PerformanceBottlenecksProps {
 }
 
 export function PerformanceBottlenecks({
-  issues,
+  issues: initialIssues,
   onViewAll,
   onSelectIssue,
 }: PerformanceBottlenecksProps) {
+  const [issues, setIssues] = useState<BottleneckIssue[]>(initialIssues);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  useEffect(() => {
+    setIssues(initialIssues);
+  }, [initialIssues]);
+
   const getIcon = (type: "js" | "image" | "dom", severity: "critical" | "warning") => {
     const color = severity === "critical" ? "text-red-500" : "text-amber-500";
     switch (type) {
@@ -38,6 +46,7 @@ export function PerformanceBottlenecks({
   };
 
   const criticalCount = issues.filter((i) => i.severity === "critical").length;
+  const displayedIssues = isExpanded ? issues : issues.slice(0, 3);
 
   return (
     <GlassCard className="rounded-[24px] overflow-hidden border-slate-200/80 shadow-sm flex flex-col h-full bg-white/70">
@@ -46,7 +55,7 @@ export function PerformanceBottlenecks({
           Performance Bottlenecks
         </h3>
         <span className="text-[10px] font-extrabold text-red-600 bg-red-50 border border-red-100 px-3 py-1 rounded-full uppercase tracking-wider">
-          {criticalCount} Critical Issues
+          {criticalCount} Critical
         </span>
       </div>
 
@@ -67,7 +76,7 @@ export function PerformanceBottlenecks({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 bg-white/20">
-            {issues.map((issue) => (
+            {displayedIssues.map((issue) => (
               <tr
                 key={issue.id}
                 onClick={() => onSelectIssue?.(issue.id)}
@@ -108,14 +117,19 @@ export function PerformanceBottlenecks({
         </table>
       </div>
 
-      <div className="p-4 bg-slate-50/50 border-t border-slate-100 text-center">
-        <button
-          onClick={onViewAll}
-          className="text-blue-600 hover:text-blue-700 font-extrabold text-xs tracking-wider uppercase hover:underline"
-        >
-          View all findings
-        </button>
-      </div>
+      {issues.length > 3 && (
+        <div className="p-4 bg-slate-50/50 border-t border-slate-100 text-center">
+          <button
+            onClick={() => {
+              setIsExpanded(!isExpanded);
+              onViewAll?.();
+            }}
+            className="text-blue-600 hover:text-blue-700 font-extrabold text-xs tracking-wider uppercase hover:underline cursor-pointer"
+          >
+            {isExpanded ? "Show Less" : `View all ${issues.length} findings`}
+          </button>
+        </div>
+      )}
     </GlassCard>
   );
 }

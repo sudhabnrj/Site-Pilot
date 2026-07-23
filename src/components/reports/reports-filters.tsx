@@ -3,6 +3,7 @@
 import { GlassCard } from "@/components/ui/glass-card";
 import { Globe, Calendar, Filter } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 interface ReportsFiltersProps {
   websites: string[];
@@ -60,9 +61,15 @@ export function ReportsFilters({ websites, onApplyFilters }: ReportsFiltersProps
 
       <div className="flex gap-2 self-end mt-2 md:mt-0 shrink-0">
         <button
-          className="p-2.5 border border-slate-200 bg-white rounded-xl hover:bg-slate-50 active:scale-95 transition-all text-slate-500 hover:text-slate-800 shadow-sm"
-          title="Advanced filters"
-          aria-label="Advanced filters"
+          onClick={() => {
+            setSelectedWebsite("All Websites");
+            setDateRange("");
+            onApplyFilters?.({ website: "All Websites", dateRange: "" });
+            toast.success("Filters Cleared", { description: "Reset all website filters to default." });
+          }}
+          className="p-2.5 border border-slate-200 bg-white rounded-xl hover:bg-slate-50 active:scale-95 transition-all text-slate-500 hover:text-slate-800 shadow-sm cursor-pointer"
+          title="Reset filters"
+          aria-label="Reset filters"
         >
           <Filter className="h-4 w-4" />
         </button>

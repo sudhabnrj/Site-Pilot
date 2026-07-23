@@ -194,14 +194,6 @@ export function Header({ onMobileMenuToggle, className }: HeaderProps) {
                     </button>
                   </li>
                 ))}
-                <div className="my-1 border-t border-slate-100" />
-                <button
-                  onClick={() => setIsWebsitesOpen(false)}
-                  className="flex w-full items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  Add website
-                </button>
               </motion.ul>
             )}
           </AnimatePresence>

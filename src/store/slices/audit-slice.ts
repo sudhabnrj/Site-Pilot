@@ -9,6 +9,8 @@ export interface AuditState {
   progressPercentage: number;
   isLoadingHistory: boolean;
   error: string | null;
+  fixedRecommendationIds: string[];
+  fixedIssueIds: string[];
 }
 
 const initialState: AuditState = {
@@ -19,6 +21,8 @@ const initialState: AuditState = {
   progressPercentage: 0,
   isLoadingHistory: false,
   error: null,
+  fixedRecommendationIds: [],
+  fixedIssueIds: [],
 };
 
 // Async Thunk: Execute Audit
@@ -97,6 +101,30 @@ export const deleteAuditReport = createAsyncThunk(
   }
 );
 
+// Async Thunk: Fix Audit Issue (removes from backend and frontend)
+export const fixAuditIssue = createAsyncThunk(
+  "audit/fixAuditIssue",
+  async (
+    { reportId, recommendationId, issueKeyword }: { reportId: string; recommendationId: string; issueKeyword: string },
+    { rejectWithValue }
+  ) => {
+    try {
+      const res = await fetch(`/api/audit/${reportId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "fix", recommendationId, issueKeyword }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to submit fix to backend.");
+      }
+      return data.report as IAuditReport;
+    } catch (err: any) {
+      return rejectWithValue(err.message || "Failed to submit fix.");
+    }
+  }
+);
+
 const auditSlice = createSlice({
   name: "audit",
   initialState,
@@ -114,6 +142,28 @@ const auditSlice = createSlice({
     clearAuditError(state) {
       state.error = null;
     },
+    applyTemporaryFix(
+      state,
+      action: PayloadAction<{ recommendationId: string; issueKeyword?: string }>
+    ) {
+      state.fixedRecommendationIds.push(action.payload.recommendationId);
+      if (action.payload.issueKeyword) {
+        // Find issue matches to filter out of issues list too
+        const keyword = action.payload.issueKeyword.toLowerCase();
+        const matchingIssues = state.currentReport?.issues?.filter((i) =>
+          i.issue.toLowerCase().includes(keyword) || keyword.includes(i.issue.toLowerCase())
+        ) || [];
+        matchingIssues.forEach((issue) => {
+          if (issue.id) {
+            state.fixedIssueIds.push(issue.id);
+          }
+        });
+      }
+    },
+    clearTemporaryFixes(state) {
+      state.fixedRecommendationIds = [];
+      state.fixedIssueIds = [];
+    },
   },
   extraReducers: (builder) => {
     // Execute Audit
@@ -122,6 +172,8 @@ const auditSlice = createSlice({
       state.error = null;
       state.progressStage = "Fetching Website...";
       state.progressPercentage = 10;
+      state.fixedRecommendationIds = [];
+      state.fixedIssueIds = [];
     });
     builder.addCase(executeAudit.fulfilled, (state, action) => {
       state.isAuditing = false;
@@ -129,6 +181,8 @@ const auditSlice = createSlice({
       state.reportsHistory = [action.payload, ...state.reportsHistory.filter((r) => r._id !== action.payload._id)];
       state.progressStage = "Complete";
       state.progressPercentage = 100;
+      state.fixedRecommendationIds = [];
+      state.fixedIssueIds = [];
     });
     builder.addCase(executeAudit.rejected, (state, action) => {
       state.isAuditing = false;
@@ -159,8 +213,22 @@ const auditSlice = createSlice({
         state.currentReport = state.reportsHistory[0] || null;
       }
     });
+
+    // Fix Issue
+    builder.addCase(fixAuditIssue.fulfilled, (state, action) => {
+      state.currentReport = action.payload;
+      state.reportsHistory = state.reportsHistory.map((r) =>
+        r._id === action.payload._id ? action.payload : r
+      );
+    });
   },
 });
 
-export const { setAuditStage, setCurrentReport, clearAuditError } = auditSlice.actions;
+export const {
+  setAuditStage,
+  setCurrentReport,
+  clearAuditError,
+  applyTemporaryFix,
+  clearTemporaryFixes,
+} = auditSlice.actions;
 export default auditSlice.reducer;

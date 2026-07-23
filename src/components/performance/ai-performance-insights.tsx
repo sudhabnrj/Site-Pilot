@@ -56,12 +56,6 @@ export function AiPerformanceInsights({
         })}
       </div>
 
-      <button
-        onClick={onGenerateCode}
-        className="w-full mt-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full font-bold text-xs shadow-md hover:shadow-lg active:scale-95 transition-all"
-      >
-        Generate Optimization Code
-      </button>
     </GlassCard>
   );
 }

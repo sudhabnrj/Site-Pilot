@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { GlassCard } from "@/components/ui/glass-card";
-import { Sparkles, Brain, CheckCircle2, AlertTriangle, ArrowRight, Zap, Code, ShieldCheck, Search, Globe } from "lucide-react";
+import { Sparkles, Brain, Zap, ArrowRight, Globe, X, CheckCircle2, ChevronRight, Terminal } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { fetchUserAudits } from "@/store/slices/audit-slice";
 import { useRouter } from "next/navigation";
+import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
 
 export default function AiInsightsPage() {
@@ -13,17 +14,68 @@ export default function AiInsightsPage() {
   const dispatch = useAppDispatch();
   const currentReport = useAppSelector((state) => state.audit.currentReport);
 
+  const [activeFix, setActiveFix] = useState<{ title: string; description: string; steps: string[] } | null>(null);
+
   useEffect(() => {
     dispatch(fetchUserAudits());
   }, [dispatch]);
 
   const domain = currentReport?.domain || "example.com";
   const recommendations = currentReport?.recommendations || [];
-  const issues = currentReport?.issues || [];
 
-  const handleApplyFix = (title: string) => {
-    toast.success("AI Automated Fix Applied", {
-      description: `Executed automated optimization for ${title}.`,
+  const getStepsForFix = (title: string, desc: string): string[] => {
+    const lower = title.toLowerCase();
+    if (lower.includes("image") || lower.includes("compress")) {
+      return [
+        "Audit existing image dimensions to match desktop and mobile display containers.",
+        "Convert image files to high-performance formats like WebP or AVIF using Squoosh or sharp.",
+        "Implement responsive image source configuration using `srcset` and `sizes` attributes.",
+        "Add loading='lazy' parameters to all images outside the initial viewport fold.",
+      ];
+    } else if (lower.includes("hsts") || lower.includes("strict-transport")) {
+      return [
+        "Access your web hosting provider configuration dashboard or web server configuration files (nginx.conf / .htaccess).",
+        "Add the header: `Strict-Transport-Security: max-age=31536000; includeSubDomains; preload`.",
+        "Verify SSL certification auto-renewal through Let's Encrypt or your custom domain SSL service.",
+        "Restart the web service to load headers and verify utilizing SSL Labs analysis tool.",
+      ];
+    } else if (lower.includes("alt") || lower.includes("aria") || lower.includes("attribute")) {
+      return [
+        "Scan local HTML template source code and identify all `<img>` or visual SVG tags.",
+        "If the image is decorative, add an empty `alt=''` attribute to omit from screen readers.",
+        "If the asset is informative, write a clear, descriptive sentence outlining the image subject matter.",
+        "Verify focusable buttons/inputs contain readable aria-label descriptions.",
+      ];
+    } else {
+      return [
+        `Locate the corresponding layout file or header configuration on your server.`,
+        `Apply parameter edits matching the diagnostic instructions: "${desc}".`,
+        `Confirm responsiveness behavior across local emulator viewports.`,
+        `Commit configurations and run a fresh website audit scan to verify compliance.`,
+      ];
+    }
+  };
+
+  const user = useAppSelector((state) => state.auth.user);
+  const isAdmin = user?.role === "admin";
+  const userPlan = isAdmin
+    ? "enterprise"
+    : user?.plan || (typeof window !== "undefined" ? (localStorage.getItem("user_plan") as any) : null) || "starter";
+
+  const handleExecuteFixClick = (rec: any) => {
+    if (!isAdmin && userPlan === "starter") {
+      toast.error("Professional Feature Locked", {
+        description: "Step-by-step AI remediation instructions require a Pro or Enterprise plan. Upgrade to unlock!",
+      });
+      router.push("/upgrade");
+      return;
+    }
+
+    const steps = getStepsForFix(rec.title, rec.description);
+    setActiveFix({
+      title: rec.title,
+      description: rec.description,
+      steps,
     });
   };
 
@@ -70,13 +122,9 @@ export default function AiInsightsPage() {
             </p>
           </div>
 
-          <button
-            onClick={() => handleApplyFix(recommendations[0]?.title || "Primary Optimization")}
-            className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-bold text-xs shadow-lg shadow-blue-600/30 active:scale-95 transition-all shrink-0 cursor-pointer"
-          >
-            <span>Apply AI Optimization</span>
-            <ArrowRight className="h-4 w-4" />
-          </button>
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 border border-white/20 text-blue-300 shrink-0 shadow-lg backdrop-blur-md select-none">
+            <Sparkles className="h-8 w-8 animate-pulse" />
+          </div>
         </div>
       </GlassCard>
 
@@ -128,7 +176,7 @@ export default function AiInsightsPage() {
               </div>
 
               <button
-                onClick={() => handleApplyFix(rec.title)}
+                onClick={() => handleExecuteFixClick(rec)}
                 className="w-full py-2.5 bg-slate-50 hover:bg-blue-50 text-blue-600 border border-slate-200 hover:border-blue-200 rounded-xl text-xs font-bold active:scale-95 transition-all cursor-pointer"
               >
                 Execute Fix
@@ -137,6 +185,84 @@ export default function AiInsightsPage() {
           ))}
         </div>
       </div>
+
+      {/* Stepwise Fix Suggestions Popup Modal */}
+      <AnimatePresence>
+        {activeFix && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setActiveFix(null)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            />
+
+            {/* Modal Content */}
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 15 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 15 }}
+              className="relative w-full max-w-2xl bg-white border border-slate-200 rounded-[28px] shadow-2xl p-6 md:p-8 z-10 overflow-hidden"
+            >
+              {/* Header */}
+              <div className="flex justify-between items-start border-b border-slate-100 pb-4 mb-5">
+                <div className="space-y-1 pr-8">
+                  <div className="flex items-center gap-2 text-xs font-bold text-blue-600 uppercase tracking-widest">
+                    <Terminal className="h-4 w-4" />
+                    <span>Lumina AI Remediation Guide</span>
+                  </div>
+                  <h3 className="text-xl font-black text-slate-950 tracking-tight">
+                    {activeFix.title}
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setActiveFix(null)}
+                  className="p-1.5 hover:bg-slate-50 rounded-xl text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+                  aria-label="Close modal"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Description */}
+              <p className="text-slate-600 text-xs font-medium mb-6 leading-relaxed bg-slate-50 border border-slate-200/50 p-3.5 rounded-xl">
+                {activeFix.description}
+              </p>
+
+              {/* Steps */}
+              <div className="space-y-4 mb-6">
+                <h4 className="text-xs font-black text-slate-400 uppercase tracking-wider">
+                  Step-by-Step Instructions:
+                </h4>
+                <div className="flex flex-col gap-3.5">
+                  {activeFix.steps.map((step, idx) => (
+                    <div key={idx} className="flex gap-3 items-start">
+                      <span className="flex h-6 w-6 items-center justify-center bg-blue-50 text-blue-600 border border-blue-100 rounded-lg text-xs font-bold shrink-0">
+                        {idx + 1}
+                      </span>
+                      <p className="text-xs font-semibold text-slate-700 leading-relaxed pt-0.5">
+                        {step}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="flex justify-end pt-2 border-t border-slate-100">
+                <button
+                  onClick={() => setActiveFix(null)}
+                  className="px-6 py-2.5 bg-slate-950 hover:bg-slate-800 text-white rounded-full text-xs font-bold shadow-md hover:shadow-lg active:scale-95 transition-all cursor-pointer"
+                >
+                  Close Guide
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

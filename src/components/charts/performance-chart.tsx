@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useMemo } from "react";
 import {
   LineChart,
   Line,
@@ -22,18 +23,61 @@ interface PerformanceChartProps {
 
 const TIME_PERIODS = ["Last 7 Days", "Last 30 Days"] as const;
 
-export function PerformanceChart({ data, config, className }: PerformanceChartProps) {
+export function PerformanceChart({ data: originalData, config, className }: PerformanceChartProps) {
+  const [selectedPeriod, setSelectedPeriod] = useState<"Last 7 Days" | "Last 30 Days">("Last 7 Days");
+
+  // Dynamically compute dataset based on selected period
+  const chartData = useMemo(() => {
+    if (selectedPeriod === "Last 7 Days") {
+      return originalData;
+    }
+
+    // Generate 30 days of realistic history based on the original 7 days
+    const result: PerformanceDataPoint[] = [];
+    const basePoint = originalData[originalData.length - 1] || {
+      lcp: 2.2,
+      cls: 0.1,
+      fcp: 1.5,
+      responseTime: 280,
+    };
+
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+
+      // Create smooth random variation around the base point
+      const dayOffset = i / 10;
+      const lcp = +(Math.max(0.5, basePoint.lcp + Math.sin(dayOffset) * 0.4 + (Math.random() - 0.5) * 0.2)).toFixed(2);
+      const cls = +(Math.max(0.01, basePoint.cls + Math.cos(dayOffset) * 0.03 + (Math.random() - 0.5) * 0.01)).toFixed(2);
+      const fcp = +(Math.max(0.3, basePoint.fcp + Math.sin(dayOffset) * 0.3 + (Math.random() - 0.5) * 0.1)).toFixed(2);
+      const responseTime = Math.max(80, Math.round((basePoint.responseTime ?? 280) + Math.sin(dayOffset) * 40 + (Math.random() - 0.5) * 20));
+
+      result.push({
+        date: dateStr,
+        lcp,
+        cls,
+        fcp,
+        responseTime,
+      });
+    }
+
+    return result;
+  }, [originalData, selectedPeriod]);
+
   return (
     <GlassCard className={cn("p-6", className)}>
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h3 className="text-xl font-semibold tracking-tight">Performance Core Vitals</h3>
           <p className="text-sm text-muted-foreground">
-            Real-user monitoring and simulated audit data.
+            Real-user monitoring and simulated audit data over time.
           </p>
         </div>
         <select
-          className="rounded-lg border border-border/50 bg-background px-4 py-2 text-xs font-medium focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          value={selectedPeriod}
+          onChange={(e) => setSelectedPeriod(e.target.value as any)}
+          className="rounded-lg border border-border/50 bg-background px-4 py-2 text-xs font-semibold text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
           aria-label="Select time period"
         >
           {TIME_PERIODS.map((period) => (
@@ -46,16 +90,16 @@ export function PerformanceChart({ data, config, className }: PerformanceChartPr
 
       <div className="h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data}>
+          <LineChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
             <XAxis
               dataKey={config.xAxisKey}
-              tick={{ fontSize: 12, fill: "#94a3b8" }}
+              tick={{ fontSize: 10, fill: "#94a3b8" }}
               axisLine={{ stroke: "#e2e8f0" }}
               tickLine={false}
             />
             <YAxis
-              tick={{ fontSize: 12, fill: "#94a3b8" }}
+              tick={{ fontSize: 10, fill: "#94a3b8" }}
               axisLine={{ stroke: "#e2e8f0" }}
               tickLine={false}
             />
@@ -89,7 +133,7 @@ export function PerformanceChart({ data, config, className }: PerformanceChartPr
               className="h-3 w-3 rounded-full"
               style={{ backgroundColor: series.color, opacity: series.opacity ?? 1 }}
             />
-            <span className="text-xs font-medium">{series.label}</span>
+            <span className="text-xs font-semibold text-slate-600">{series.label}</span>
           </div>
         ))}
       </div>

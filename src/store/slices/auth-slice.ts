@@ -7,6 +7,7 @@ export interface AuthUser {
   email: string;
   role: "admin" | "user";
   status: "active" | "inactive";
+  plan?: "starter" | "pro" | "enterprise";
   isEmailVerified?: boolean;
   profileImage?: string;
   lastLogin?: string | null;
@@ -39,6 +40,11 @@ export const authSlice = createSlice({
       state.isInitialized = true;
       state.error = null;
     },
+    updateUserPlan: (state, action: PayloadAction<"starter" | "pro" | "enterprise">) => {
+      if (state.user) {
+        state.user.plan = action.payload;
+      }
+    },
     logout: (state) => {
       state.user = null;
       state.isAuthenticated = false;
@@ -60,7 +66,7 @@ export const authSlice = createSlice({
   },
 });
 
-export const { setCredentials, logout, setLoading, setInitialized, setError } =
+export const { setCredentials, updateUserPlan, logout, setLoading, setInitialized, setError } =
   authSlice.actions;
 
 export default authSlice.reducer;

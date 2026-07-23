@@ -64,8 +64,52 @@ export default function WebsitesPage() {
     }
   };
 
+  // Handle View Report — navigate to dashboard and set current report
+  const handleViewReport = (id: string) => {
+    const report = reportsHistory.find((r) => r._id === id || r.url === id);
+    if (report) {
+      dispatch(setCurrentReport(report));
+    }
+    router.push("/");
+  };
+
+  // Handle Delete Website
+  const handleDelete = async (id: string) => {
+    const site = websites.find((w) => w.id === id);
+    if (!site) return;
+    if (!confirm(`Are you sure you want to delete ${site.domain}?`)) return;
+
+    try {
+      const res = await fetch(`/api/audit/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        toast.success(`Deleted ${site.domain} from monitored websites.`);
+        dispatch(fetchUserAudits());
+      } else {
+        toast.error("Failed to delete website.");
+      }
+    } catch {
+      toast.error("Network error while deleting.");
+    }
+  };
+
+  const user = useAppSelector((state) => state.auth.user);
+  const isAdmin = user?.role === "admin";
+  const userPlan = isAdmin
+    ? "enterprise"
+    : user?.plan || (typeof window !== "undefined" ? (localStorage.getItem("user_plan") as any) : null) || "starter";
+
+  const maxSites = isAdmin ? 999 : userPlan === "enterprise" ? 999 : userPlan === "pro" ? 15 : 3;
+
   // Handle Add Website
   const handleAddWebsite = async () => {
+    if (!isAdmin && websites.length >= maxSites) {
+      toast.error(`Website Limit Reached (${websites.length}/${maxSites})`, {
+        description: `Your ${userPlan.toUpperCase()} plan is capped at ${maxSites} sites. Upgrade your plan to add more properties!`,
+      });
+      router.push("/upgrade");
+      return;
+    }
+
     const targetUrl = prompt("Enter website URL to add & audit (e.g., https://example.com):");
     if (!targetUrl || !targetUrl.trim()) return;
 
@@ -109,9 +153,14 @@ export default function WebsitesPage() {
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h2 className="text-3xl font-black tracking-tight text-slate-900">
-            Monitored Websites
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-3xl font-black tracking-tight text-slate-900">
+              Monitored Websites
+            </h2>
+            <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-100">
+              {websites.length}/{isAdmin ? "∞" : maxSites} Used ({userPlan} plan)
+            </span>
+          </div>
           <p className="mt-1 text-sm text-muted-foreground">
             Real-time health monitoring and audit history for {websites.length} properties.
           </p>
@@ -234,6 +283,8 @@ export default function WebsitesPage() {
                   <WebsiteCard
                     website={site}
                     onRefresh={handleRefresh}
+                    onDelete={handleDelete}
+                    onViewReport={handleViewReport}
                   />
                 </motion.div>
               ))}

@@ -88,17 +88,27 @@ export default function DashboardPage() {
       }
     : WEBSITE_HEALTH;
 
+  const { fixedIssueIds, fixedRecommendationIds } = useAppSelector((state) => state.audit);
+
   const chartData = currentReport?.chartData?.length
     ? currentReport.chartData
     : MOCK_PERFORMANCE_DATA;
 
-  const issuesList = currentReport?.issues?.length
+  const rawIssues = currentReport?.issues?.length
     ? currentReport.issues
     : MOCK_ISSUES;
 
-  const recommendationsList = currentReport?.recommendations?.length
+  const issuesList = rawIssues.filter(
+    (issue) => !fixedIssueIds.includes(issue.id || "")
+  );
+
+  const rawRecommendations = currentReport?.recommendations?.length
     ? currentReport.recommendations
     : MOCK_RECOMMENDATIONS;
+
+  const recommendationsList = rawRecommendations.filter(
+    (rec) => !fixedRecommendationIds.includes(rec.id || "")
+  );
 
   const previewUrl = currentReport?.domain || "example.com";
   const lastScanTime = currentReport?.createdAt

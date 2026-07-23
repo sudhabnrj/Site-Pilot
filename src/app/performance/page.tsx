@@ -214,14 +214,32 @@ export default function PerformancePage() {
     : DEFAULT_BOTTLENECKS;
 
   const handleShare = () => {
-    toast.success("Dashboard Link Copied", {
-      description: "Performance metrics report link copied to clipboard.",
-    });
+    if (typeof window !== "undefined") {
+      navigator.clipboard.writeText(window.location.href);
+      toast.success("Link Copied!", {
+        description: "Performance metrics report link copied to clipboard.",
+      });
+    }
   };
 
   const handleExportReport = () => {
-    toast.success("Downloading Performance Report", {
-      description: `Exporting performance metrics for ${currentReport?.domain || "website"}...`,
+    if (!currentReport) return;
+    const header = "Metric,Value,Status\n";
+    const lcpRow = `Largest Contentful Paint (LCP),${currentReport.metrics.lcp}s,${currentReport.metrics.lcp < 2.5 ? "Good" : "Needs Work"}\n`;
+    const clsRow = `Cumulative Layout Shift (CLS),${currentReport.metrics.cls},${currentReport.metrics.cls < 0.1 ? "Perfect" : "Needs Work"}\n`;
+    const fcpRow = `First Contentful Paint (FCP),${currentReport.metrics.fcp}s,${currentReport.metrics.fcp < 1.8 ? "Good" : "Needs Work"}\n`;
+    const ttfbRow = `Time to First Byte (TTFB),${currentReport.metrics.ttfb}ms,${currentReport.metrics.ttfb < 300 ? "Excellent" : "Needs Work"}\n`;
+    const csvContent = "data:text/csv;charset=utf-8," + encodeURIComponent(header + lcpRow + clsRow + fcpRow + ttfbRow);
+    
+    const link = document.createElement("a");
+    link.setAttribute("href", csvContent);
+    link.setAttribute("download", `performance_report_${currentReport.domain}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast.success("Export Successful", {
+      description: `Downloaded performance report for ${currentReport.domain}.`,
     });
   };
 

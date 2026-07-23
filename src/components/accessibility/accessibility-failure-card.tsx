@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { GlassCard } from "@/components/ui/glass-card";
-import { Brain, Eye, Sparkles, Check, Loader2 } from "lucide-react";
+import { Brain } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface AccessibilityFailure {
@@ -12,49 +11,38 @@ export interface AccessibilityFailure {
   severity: "Critical" | "Warning";
   description: string;
   aiSuggestion: string;
-  imageSrc: string;
+  imageSrc?: string;
 }
 
 interface AccessibilityFailureCardProps {
   failure: AccessibilityFailure;
-  onViewInCode?: (id: string) => void;
-  onApplyFix?: (id: string) => void;
 }
 
 export function AccessibilityFailureCard({
   failure,
-  onViewInCode,
-  onApplyFix,
 }: AccessibilityFailureCardProps) {
-  const [fixState, setFixState] = useState<"idle" | "fixing" | "fixed">("idle");
-
-  const handleFixClick = async () => {
-    setFixState("fixing");
-    onApplyFix?.(failure.id);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setFixState("fixed");
-  };
-
   const isCritical = failure.severity === "Critical";
+
+  // Use the provided imageSrc or a default placeholder
+  const imageSource = failure.imageSrc || "https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=600&auto=format&fit=crop";
 
   return (
     <GlassCard
       className={cn(
-        "rounded-[24px] overflow-hidden border-slate-200/80 shadow-sm group bg-white/70 transition-all duration-300",
-        fixState === "fixed" && "opacity-60 pointer-events-none bg-slate-50/20"
+        "rounded-[24px] overflow-hidden border-slate-200/80 shadow-sm group bg-white/70 transition-all duration-300"
       )}
     >
       <div className="flex flex-col lg:flex-row">
-        {/* Left Graphics Panel */}
-        <div className="lg:w-1/3 h-48 lg:h-auto relative overflow-hidden shrink-0 select-none border-b lg:border-b-0 lg:border-r border-slate-100">
+        {/* Left Graphics Panel showing screenshot */}
+        <div className="lg:w-1/3 h-48 lg:h-auto relative overflow-hidden shrink-0 select-none border-b lg:border-b-0 lg:border-r border-slate-100 bg-slate-50">
           <img
-            className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500 ease-out"
-            src={failure.imageSrc}
+            className="w-full h-full object-cover transition-all duration-500 ease-out"
+            src={imageSource}
             alt={failure.title}
           />
           <div
             className={cn(
-              "absolute top-4 left-4 text-white text-[9px] font-black px-2 py-1 rounded tracking-wide shadow-sm",
+              "absolute top-4 left-4 text-white text-[9px] font-black px-2.5 py-1 rounded tracking-wide shadow-sm uppercase",
               isCritical ? "bg-red-500" : "bg-amber-500"
             )}
           >
@@ -66,12 +54,7 @@ export function AccessibilityFailureCard({
         <div className="p-6 lg:w-2/3 flex flex-col justify-between">
           <div>
             <div className="flex justify-between items-start gap-4 mb-2">
-              <h4
-                className={cn(
-                  "text-base font-bold text-slate-800 tracking-tight",
-                  fixState === "fixed" && "line-through text-slate-400"
-                )}
-              >
+              <h4 className="text-base font-bold text-slate-800 tracking-tight">
                 {failure.title}
               </h4>
               <span
@@ -92,7 +75,7 @@ export function AccessibilityFailureCard({
             {/* AI Suggestion Box */}
             <div
               className={cn(
-                "p-4 rounded-xl border text-xs leading-relaxed text-slate-600 mb-4 shadow-sm",
+                "p-4 rounded-xl border text-xs leading-relaxed text-slate-600 shadow-sm",
                 isCritical
                   ? "bg-slate-50/50 border-slate-200"
                   : "bg-indigo-50/20 border-indigo-100/30"
@@ -102,41 +85,10 @@ export function AccessibilityFailureCard({
                 <Brain className="h-4.5 w-4.5 text-indigo-600 shrink-0 mt-0.5" />
                 <div>
                   <p className="font-extrabold text-slate-800 mb-0.5">AI Suggestion</p>
-                  <p className="font-medium text-slate-500 italic">"{failure.aiSuggestion}"</p>
+                  <p className="font-medium text-slate-500 italic">&quot;{failure.aiSuggestion}&quot;</p>
                 </div>
               </div>
             </div>
-          </div>
-
-          {/* Action Links Footer */}
-          <div className="flex items-center gap-6 pt-4 border-t border-slate-100 mt-2">
-            <button
-              onClick={() => onViewInCode?.(failure.id)}
-              className="flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 active:scale-95 transition-all hover:underline"
-            >
-              <Eye className="h-4 w-4" />
-              View in Code
-            </button>
-
-            {fixState === "fixed" ? (
-              <span className="flex items-center gap-1 text-xs font-bold text-emerald-600">
-                <Check className="h-4 w-4" />
-                Fixed
-              </span>
-            ) : fixState === "fixing" ? (
-              <span className="flex items-center gap-1 text-xs font-bold text-blue-600">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Applying Fix...
-              </span>
-            ) : (
-              <button
-                onClick={handleFixClick}
-                className="flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 active:scale-95 transition-all hover:underline"
-              >
-                <Sparkles className="h-4 w-4" />
-                Apply Fix
-              </button>
-            )}
           </div>
         </div>
       </div>

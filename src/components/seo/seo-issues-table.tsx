@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { GlassCard } from "@/components/ui/glass-card";
 import { AlertCircle, AlertTriangle, Link, Check, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -21,12 +21,17 @@ interface SeoIssuesTableProps {
 
 export function SeoIssuesTable({
   issues: initialIssues,
-  resolvedCount = 12,
+  resolvedCount = 0,
   onViewAll,
   onFixIssue,
 }: SeoIssuesTableProps) {
   const [issues, setIssues] = useState<SeoIssue[]>(initialIssues);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [fixingState, setFixingState] = useState<Record<string, "idle" | "fixing" | "fixed">>({});
+
+  useEffect(() => {
+    setIssues(initialIssues);
+  }, [initialIssues]);
 
   const handleFix = async (id: string) => {
     setFixingState((prev) => ({ ...prev, [id]: "fixing" }));
@@ -65,6 +70,8 @@ export function SeoIssuesTable({
     (i) => i.impact === "Critical" && fixingState[i.id] !== "fixed"
   ).length;
 
+  const displayedIssues = isExpanded ? issues : issues.slice(0, 3);
+
   return (
     <GlassCard className="rounded-[24px] overflow-hidden border-slate-200/80 shadow-sm flex flex-col bg-white/70">
       <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-white/50">
@@ -99,7 +106,7 @@ export function SeoIssuesTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 bg-white/20">
-            {issues.map((issue) => {
+            {displayedIssues.map((issue) => {
               const state = fixingState[issue.id] ?? "idle";
               const isFixed = state === "fixed";
               const isFixing = state === "fixing";
@@ -156,7 +163,7 @@ export function SeoIssuesTable({
                     ) : (
                       <button
                         onClick={() => handleFix(issue.id)}
-                        className="opacity-0 group-hover:opacity-100 bg-blue-600 hover:bg-blue-700 text-white rounded-full px-4 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm hover:shadow"
+                        className="opacity-0 group-hover:opacity-100 bg-blue-600 hover:bg-blue-700 text-white rounded-full px-4 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm hover:shadow cursor-pointer"
                       >
                         Fix Issue
                       </button>
@@ -169,14 +176,19 @@ export function SeoIssuesTable({
         </table>
       </div>
 
-      <div className="p-4 border-t border-slate-100 bg-slate-50/50 text-center">
-        <button
-          onClick={onViewAll}
-          className="text-blue-600 hover:text-blue-700 font-extrabold text-xs tracking-wider uppercase hover:underline"
-        >
-          View All {issues.length + 21} Issues
-        </button>
-      </div>
+      {issues.length > 3 && (
+        <div className="p-4 border-t border-slate-100 bg-slate-50/50 text-center">
+          <button
+            onClick={() => {
+              setIsExpanded(!isExpanded);
+              onViewAll?.();
+            }}
+            className="text-blue-600 hover:text-blue-700 font-extrabold text-xs tracking-wider uppercase hover:underline cursor-pointer"
+          >
+            {isExpanded ? "Show Less" : `View All ${issues.length} Issues`}
+          </button>
+        </div>
+      )}
     </GlassCard>
   );
 }

@@ -27,12 +27,6 @@ export function SeoFeaturedInsight({
         </p>
       </div>
 
-      <button
-        onClick={onApplyInsight}
-        className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full text-xs font-bold shadow-md hover:shadow-lg active:scale-95 transition-all shrink-0 mt-3 md:mt-0"
-      >
-        Apply Insight
-      </button>
     </div>
   );
 }

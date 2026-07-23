@@ -81,7 +81,6 @@ export const ISSUES_TABLE_COLUMNS = [
   { key: "issue", label: "Issue" },
   { key: "page", label: "Page" },
   { key: "impact", label: "Impact" },
-  { key: "status", label: "Status" },
 ] as const;
 
 export const MOCK_RECOMMENDATIONS: AiRecommendation[] = [

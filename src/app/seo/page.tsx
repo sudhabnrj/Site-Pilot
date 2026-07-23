@@ -152,7 +152,15 @@ export default function SeoPage() {
         {/* Left Column */}
         <div className="flex flex-col gap-8 lg:col-span-2">
           <SeoGaugeCard score={seoScore} />
-          <SeoIssuesTable issues={issuesList} />
+          <SeoIssuesTable
+            issues={issuesList}
+            resolvedCount={0}
+            onViewAll={() => {
+              toast.info("All SEO Issues", {
+                description: `Displaying all ${issuesList.length} SEO issues for ${currentReport?.domain || "website"}.`,
+              });
+            }}
+          />
         </div>
 
         {/* Right Column */}
@@ -160,7 +168,7 @@ export default function SeoPage() {
           <SeoVisualCard
             title="SERP Snippet Preview"
             description="Visualize how search engine bots render your meta title and description."
-            imageSrc="https://images.unsplash.com/photo-1571786256017-aee7a0c009b6?w=600&auto=format&fit=crop"
+            imageSrc={currentReport?.screenshotUrl || "https://images.unsplash.com/photo-1571786256017-aee7a0c009b6?w=600&auto=format&fit=crop"}
           />
           <SeoFeaturedInsight
             recommendation={
