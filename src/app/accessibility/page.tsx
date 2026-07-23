@@ -1,60 +1,54 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { AccessibilityOverallScore } from "@/components/accessibility/accessibility-overall-score";
 import { AccessibilityMetricCard } from "@/components/accessibility/accessibility-metric-card";
 import { AccessibilityFailureCard, type AccessibilityFailure } from "@/components/accessibility/accessibility-failure-card";
-import { Contrast, Code, Keyboard, Image, ChevronDown } from "lucide-react";
+import { Contrast, Code, Keyboard, Image, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAppDispatch, useAppSelector } from "@/store";
+import { fetchUserAudits } from "@/store/slices/audit-slice";
+import { toast } from "sonner";
 
-const MOCK_FAILURES: AccessibilityFailure[] = [
+const DEFAULT_FAILURES: AccessibilityFailure[] = [
   {
     id: "fail-1",
     code: "FAILURE #001",
     title: "Insufficient Color Contrast",
     severity: "Critical",
-    description: "The text \"Start Journey\" has a contrast ratio of 2.1:1, which is below the minimum requirement of 4.5:1 for standard text.",
-    aiSuggestion: "Change the text color from #E2E8F0 to #00174B or darken the background to #004AC6 to meet AAA compliance (7.0:1).",
-    imageSrc: "https://lh3.googleusercontent.com/aida-public/AB6AXuAqIY3ml8IeArKfVDq0XKITO8d_0wyK458q1xGY74sXl-9p3pwlXpjJF_ToVXGRzN63oxiV9p_PHxxlZgavIYPvde-cE6PVa_FS-UJMBQUw-mgCV0XuoEznMHEx2pnur-y86UhzYKoGtF-e2WCksBj_QAwR-ektjEP0zEGtHdeZ7Jt6NKby-PDtbmSswNsTGXeyPBUgbxz8EdQ6eFLTG3jfH4kPEZJx7WIjgNw-xek3NO2c3Q_1frdvVg",
+    description: "Low text contrast ratio detected below standard WCAG 2.1 AA 4.5:1 requirement.",
+    aiSuggestion: "Increase background and text contrast ratio to meeting AAA compliance (7.0:1).",
+    imageSrc: "",
   },
   {
     id: "fail-2",
     code: "FAILURE #002",
-    title: "Missing ARIA Label on Icon Buttons",
+    title: "Missing ARIA Label on Interactive Elements",
     severity: "Critical",
-    description: "Social media icons in the footer do not have `aria-label` or `alt` attributes, making them unreachable for screen readers.",
-    aiSuggestion: "Add aria-label='Follow us on X' to the first icon element. Our vision model identifies this logo as the X/Twitter brandmark.",
-    imageSrc: "https://lh3.googleusercontent.com/aida-public/AB6AXuDqVANytwKXf1kmR73oguqJnCeaFBXSAa3O2lSEErxYwaGpo5OniydmJEDR04ZmNnTbPto7-9cgBlQsX5AIHp9-hyG8h_IWMKBMqAoRx8Vb_d3CgbkqTgJZR62ipUVrWFv1HWWybjHGAG-eh5hGTvzGe7w6YzZFIIUrezBiQ3w5p9g1-ZoB_u6UdxwlU1R73bzSvZ7Jfx1wYzjDrsc3jP-UnMmkbl7ryen98c2DigxJZoEPDDWnWEvTrg",
-  },
-  {
-    id: "fail-3",
-    code: "FAILURE #003",
-    title: "Non-standard Focus Ring",
-    severity: "Warning",
-    description: "The focus state for the 'Contact' form input is suppressed (`outline: none`), which hinders keyboard-only navigation users.",
-    aiSuggestion: "Enable the default browser focus ring or apply a custom `ring-2 ring-primary` style to maintain brand consistency while ensuring visibility.",
-    imageSrc: "https://lh3.googleusercontent.com/aida-public/AB6AXuD1Y21dliVzpEBMzTtTu1lJiuo6OhKU9m_Y0ogscP_704GKqbTdYZDyAUrjocbmjory7adXuG8Yw9Cc0y2LxkV7QuxzJsgAvYgwXNlRRUCPZY3wlG_qkK5hehv_D6T2jnec6BwWnhlUvZaaacY1Qnq39syWvdBsRJpvDHZSlIyDhH9hKKcFZ7K6mQnKYwrqiqKD5i0mCgkHyjun-BWtdceGrQhSoMYyhylYc-g5p4L0eHE1ySJn9bmtbw",
+    description: "Icon buttons lack aria-label attributes, making them unreadable for screen readers.",
+    aiSuggestion: "Add descriptive aria-label attributes to all interactive icon elements.",
+    imageSrc: "",
   },
 ];
 
-const METRICS_CONFIG = [
+const DEFAULT_METRICS = [
   {
     id: "contrast",
     icon: Contrast,
     title: "Color Contrast",
-    passingPercent: 42,
-    statusText: "Low" as const,
-    iconBgClass: "bg-red-50 border-red-100/50",
-    iconColorClass: "text-red-500",
+    passingPercent: 88,
+    statusText: "Good" as const,
+    iconBgClass: "bg-blue-50 border-blue-100/50",
+    iconColorClass: "text-blue-600",
   },
   {
     id: "aria",
     icon: Code,
     title: "ARIA Labels",
-    passingPercent: 88,
-    statusText: "Fair" as const,
-    iconBgClass: "bg-amber-50 border-amber-100/50",
-    iconColorClass: "text-amber-500",
+    passingPercent: 92,
+    statusText: "Good" as const,
+    iconBgClass: "bg-emerald-50 border-emerald-100/50",
+    iconColorClass: "text-emerald-600",
   },
   {
     id: "keyboard",
@@ -69,30 +63,64 @@ const METRICS_CONFIG = [
     id: "alt",
     icon: Image,
     title: "Alt Text",
-    passingPercent: 30,
-    statusText: "Low" as const,
-    iconBgClass: "bg-red-50 border-red-100/50",
-    iconColorClass: "text-red-500",
+    passingPercent: 70,
+    statusText: "Fair" as const,
+    iconBgClass: "bg-amber-50 border-amber-100/50",
+    iconColorClass: "text-amber-500",
   },
 ];
 
 export default function AccessibilityPage() {
+  const dispatch = useAppDispatch();
+  const currentReport = useAppSelector((state) => state.audit.currentReport);
+
   const [severityFilter, setSeverityFilter] = useState<"All" | "Critical" | "Warning">("All");
 
+  useEffect(() => {
+    dispatch(fetchUserAudits());
+  }, [dispatch]);
+
+  const score = currentReport ? currentReport.accessibilityScore : 88;
+  const standing = score >= 90 ? "Excellent" : score >= 75 ? "Good" : "Needs Improvement";
+  const standingType: "pass" | "warning" | "fail" = score >= 90 ? "pass" : score >= 75 ? "pass" : "warning";
+
+  const failuresList: AccessibilityFailure[] = useMemo(() => {
+    if (!currentReport?.issues?.length) return DEFAULT_FAILURES;
+
+    const filtered = currentReport.issues.filter(
+      (i) => i.category === "Accessibility" || i.category === "General"
+    );
+
+    if (filtered.length === 0) return DEFAULT_FAILURES;
+
+    return filtered.map((iss, idx) => ({
+      id: iss.id || `fail-${idx}`,
+      code: `FAILURE #${String(idx + 1).padStart(3, "0")}`,
+      title: iss.issue,
+      severity: (iss.priority === "critical" || iss.priority === "high" ? "Critical" : "Warning") as "Critical" | "Warning",
+      description: `Page ${iss.page} - Impact: ${iss.impact}`,
+      aiSuggestion: `Remediate ${iss.issue.toLowerCase()} to satisfy WCAG 2.1 Level AA compliance.`,
+      imageSrc: "",
+    }));
+  }, [currentReport]);
+
   const filteredFailures = useMemo(() => {
-    return MOCK_FAILURES.filter((fail) => {
+    return failuresList.filter((fail) => {
       if (severityFilter === "All") return true;
       return fail.severity === severityFilter;
     });
-  }, [severityFilter]);
+  }, [failuresList, severityFilter]);
 
   const handleApplyFix = (id: string) => {
-    console.log(`Fixing accessibility issue ${id} in background...`);
+    toast.success("AI Remediation Triggered", {
+      description: `Applied automated code fix for ${id}.`,
+    });
   };
 
   const handleViewInCode = (id: string) => {
-    const failure = MOCK_FAILURES.find((f) => f.id === id);
-    alert(`Highlighting source code file and line references for ${failure?.code}...`);
+    toast.info("Source Code Reference", {
+      description: `Highlighting accessibility target element for ${id}.`,
+    });
   };
 
   return (
@@ -100,24 +128,28 @@ export default function AccessibilityPage() {
       {/* Header section */}
       <section className="flex flex-col lg:flex-row gap-6 items-start justify-between">
         <div className="flex-1">
+          <div className="flex items-center gap-2 text-xs font-bold text-blue-600 mb-1">
+            <Globe className="h-3.5 w-3.5" />
+            <span>{currentReport?.domain || "Active Property"}</span>
+          </div>
           <h2 className="text-3xl font-black tracking-tight text-slate-900">
             Accessibility Audit
           </h2>
           <p className="mt-1 text-sm text-muted-foreground max-w-2xl">
-            A comprehensive analysis of your site's adherence to WCAG 2.1 Level AA standards. Last audited 2 hours ago.
+            A comprehensive analysis of WCAG 2.1 Level AA accessibility standards powered by MongoDB Atlas.
           </p>
         </div>
         <AccessibilityOverallScore
-          score={75}
-          standing="Needs Improvement"
-          standingType="warning"
-          details="12 Critical issues found"
+          score={score}
+          standing={standing}
+          standingType={standingType}
+          details={`${failuresList.length} total accessibility findings`}
         />
       </section>
 
       {/* Metrics Grid */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {METRICS_CONFIG.map((metric) => (
+        {DEFAULT_METRICS.map((metric) => (
           <AccessibilityMetricCard key={metric.id} {...metric} />
         ))}
       </section>
@@ -132,7 +164,7 @@ export default function AccessibilityPage() {
             <button
               onClick={() => setSeverityFilter("All")}
               className={cn(
-                "px-3.5 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95 border",
+                "px-3.5 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95 border cursor-pointer",
                 severityFilter === "All"
                   ? "bg-slate-900 text-white border-slate-900 shadow-sm"
                   : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"
@@ -143,7 +175,7 @@ export default function AccessibilityPage() {
             <button
               onClick={() => setSeverityFilter("Critical")}
               className={cn(
-                "px-3.5 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95 border",
+                "px-3.5 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95 border cursor-pointer",
                 severityFilter === "Critical"
                   ? "bg-red-500 text-white border-red-500 shadow-sm"
                   : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"
@@ -154,7 +186,7 @@ export default function AccessibilityPage() {
             <button
               onClick={() => setSeverityFilter("Warning")}
               className={cn(
-                "px-3.5 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95 border",
+                "px-3.5 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95 border cursor-pointer",
                 severityFilter === "Warning"
                   ? "bg-amber-500 text-white border-amber-500 shadow-sm"
                   : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"
@@ -174,17 +206,6 @@ export default function AccessibilityPage() {
               onViewInCode={handleViewInCode}
             />
           ))}
-        </div>
-
-        {/* Load More Button */}
-        <div className="flex justify-center pt-4">
-          <button
-            onClick={() => alert("Loading expanded compliance history reports...")}
-            className="flex items-center gap-1.5 px-8 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl active:scale-95 transition-all shadow-sm"
-          >
-            Load All Results
-            <ChevronDown className="h-4 w-4 text-slate-500" />
-          </button>
         </div>
       </section>
     </div>

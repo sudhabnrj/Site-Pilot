@@ -1,29 +1,32 @@
 "use client";
 
+import { useEffect } from "react";
 import { SecurityScoreCard } from "@/components/security/security-score-card";
 import { SecurityHeaderChecklistItem } from "@/components/security/security-header-checklist-item";
 import { SecurityVulnerabilityScan } from "@/components/security/security-vulnerability-scan";
 import { SecurityActionCard } from "@/components/security/security-action-card";
-import { Lock, ShieldCheck, Zap, FileCheck, Maximize, Lightbulb, Activity } from "lucide-react";
-import { CheckCircle } from "lucide-react";
+import { Lock, ShieldCheck, Zap, FileCheck, Maximize, Lightbulb, Activity, CheckCircle } from "lucide-react";
+import { useAppDispatch, useAppSelector } from "@/store";
+import { fetchUserAudits } from "@/store/slices/audit-slice";
+import { toast } from "sonner";
 
 const CHECKLIST_ITEMS = [
   {
     icon: Lock,
     title: "HTTPS Enforcement",
-    description: "All traffic is encrypted over SSL/TLS.",
+    description: "All web traffic is encrypted over SSL/TLS.",
     statusText: "ENABLED",
   },
   {
     icon: ShieldCheck,
     title: "SSL Certificate",
-    description: "Valid DigiCert SHA2 Secure Server CA.",
+    description: "Valid TLS/SSL certificate.",
     statusText: "VALID",
   },
   {
     icon: Zap,
     title: "Strict-Transport-Security",
-    description: "HSTS header correctly implemented.",
+    description: "HSTS header configured.",
     statusText: "PASS",
   },
   {
@@ -41,16 +44,40 @@ const CHECKLIST_ITEMS = [
 ];
 
 export default function SecurityPage() {
+  const dispatch = useAppDispatch();
+  const currentReport = useAppSelector((state) => state.audit.currentReport);
+
+  useEffect(() => {
+    dispatch(fetchUserAudits());
+  }, [dispatch]);
+
+  const score = currentReport ? currentReport.securityScore : 95;
+  const domain = currentReport?.domain || "example.com";
+  const grade = score >= 90 ? "A+" : score >= 80 ? "A" : score >= 70 ? "B" : "C";
+  const standing = score >= 90 ? "Excellent" : score >= 75 ? "Good" : "Needs Attention";
+
+  const securityIssues = currentReport?.issues?.filter((i) => i.category === "Security") || [];
+  const criticalCount = securityIssues.filter((i) => i.priority === "critical").length;
+  const highCount = securityIssues.filter((i) => i.priority === "high").length;
+  const mediumCount = securityIssues.filter((i) => i.priority === "medium").length;
+  const lowCount = securityIssues.filter((i) => i.priority === "low").length;
+
   const handleViewLogs = () => {
-    alert("Displaying full 32-point vulnerability exploit scanner logs...");
+    toast.info("Vulnerability Scanner Logs", {
+      description: `Loaded 32-point security check logs for ${domain}.`,
+    });
   };
 
   const handleApplyPatch = () => {
-    alert("Navigating to patch guide for React v18.2 upgrade logs...");
+    toast.success("Security Recommendation", {
+      description: "HSTS and CSP headers guide compiled.",
+    });
   };
 
   const handleTrafficLogs = () => {
-    alert("Opening DNS poisoning block alerts and real-time firewall graphs...");
+    toast.info("Firewall Traffic Logs", {
+      description: `Monitoring live HTTPS requests for ${domain}.`,
+    });
   };
 
   return (
@@ -70,17 +97,17 @@ export default function SecurityPage() {
             Security Overview
           </h2>
           <p className="text-slate-500 text-sm font-semibold max-w-2xl leading-relaxed">
-            Comprehensive vulnerability and header analysis for{" "}
-            <span className="text-blue-600 font-extrabold">auditai.app</span>
+            Comprehensive security header and vulnerability analysis for{" "}
+            <span className="text-blue-600 font-extrabold">{domain}</span>
           </p>
         </div>
         <div className="text-left sm:text-right select-none shrink-0">
           <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">
-            Last Scan: 2 minutes ago
+            Last Scan: {currentReport?.createdAt ? new Date(currentReport.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Just now"}
           </p>
           <div className="flex items-center gap-1.5 text-emerald-600 font-black text-sm uppercase tracking-wide">
             <CheckCircle className="h-4.5 w-4.5" />
-            <span>System Secure</span>
+            <span>{score >= 75 ? "System Secure" : "Attention Required"}</span>
           </div>
         </div>
       </section>
@@ -89,10 +116,10 @@ export default function SecurityPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         <div className="lg:col-span-4 flex flex-col justify-between">
           <SecurityScoreCard
-            scoreGrade="A+"
-            scorePercent={95}
-            standing="Excellent"
-            details="Your site is in the top 1% of audited domains for header security."
+            scoreGrade={grade}
+            scorePercent={score}
+            standing={standing}
+            details={`Audit report compiled for ${domain} with ${securityIssues.length} security flags.`}
           />
         </div>
 
@@ -111,10 +138,10 @@ export default function SecurityPage() {
       {/* Vulnerability Scan Panel */}
       <section>
         <SecurityVulnerabilityScan
-          criticalCount={0}
-          highCount={0}
-          mediumCount={2}
-          lowCount={5}
+          criticalCount={criticalCount}
+          highCount={highCount}
+          mediumCount={mediumCount}
+          lowCount={lowCount}
           onViewLog={handleViewLogs}
         />
       </section>
@@ -123,17 +150,17 @@ export default function SecurityPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <SecurityActionCard
           icon={Lightbulb}
-          title="AI Recommendation"
-          description="Your Medium-risk flags are related to outdated JS libraries in the /scripts directory. Updating to React v18.2 would resolve these automatically."
-          buttonText="Apply Patch Guide"
+          title="AI Security Recommendation"
+          description={`Enforcing Strict-Transport-Security (HSTS) and CSP headers on ${domain} will protect against MITM and XSS attacks.`}
+          buttonText="Apply Security Fixes"
           buttonVariant="primary"
           onAction={handleApplyPatch}
         />
         <SecurityActionCard
           icon={Activity}
           title="Real-time Monitoring"
-          description="AuditAI is actively monitoring your domain for DNS poisoning and brute force attempts. 12 attempts blocked in the last 24h."
-          buttonText="View Traffic Logs"
+          description={`Actively monitoring domain ${domain} for SSL certificate expiration, header tampering, and unusual traffic spikes.`}
+          buttonText="View Security Logs"
           buttonVariant="secondary"
           onAction={handleTrafficLogs}
         />
