@@ -1,7 +1,7 @@
 import type { NavItem } from "@/types/dashboard";
 
 export const BRAND = {
-  name: "SitePilot",
+  name: "Site Pilot",
   plan: "Pro Plan",
 } as const;
 

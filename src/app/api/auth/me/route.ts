@@ -67,8 +67,8 @@ export async function GET(req: Request) {
 
       await clearAuthCookies();
       return NextResponse.json(
-        { success: false, message: "Unauthorized" },
-        { status: 401 }
+        { success: false, authenticated: false, user: null },
+        { status: 200 }
       );
     }
 
@@ -77,8 +77,8 @@ export async function GET(req: Request) {
     if (!user || user.status !== "active") {
       await clearAuthCookies();
       return NextResponse.json(
-        { success: false, message: "User account inactive or not found" },
-        { status: 401 }
+        { success: false, authenticated: false, message: "User account inactive or not found", user: null },
+        { status: 200 }
       );
     }
 
@@ -98,8 +98,8 @@ export async function GET(req: Request) {
     });
   } catch (error: any) {
     return NextResponse.json(
-      { success: false, message: error.message || "Failed to fetch user session" },
-      { status: 401 }
+      { success: false, authenticated: false, message: error.message || "Failed to fetch user session", user: null },
+      { status: 200 }
     );
   }
 }

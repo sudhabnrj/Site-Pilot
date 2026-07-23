@@ -3,6 +3,7 @@ import { connectToDatabase } from "@/lib/mongodb";
 import { User } from "@/models/user.model";
 import { resendVerificationSchema } from "@/validators/auth.validator";
 import { generateRandomToken } from "@/lib/auth/tokens";
+import { sendVerificationEmail, getAppBaseUrl } from "@/lib/email";
 
 export async function POST(req: Request) {
   try {
@@ -29,6 +30,14 @@ export async function POST(req: Request) {
       const newToken = generateRandomToken();
       user.emailVerificationToken = newToken;
       await user.save();
+
+      const baseUrl = getAppBaseUrl(req);
+      await sendVerificationEmail({
+        to: user.email,
+        name: user.firstName ? `${user.firstName} ${user.lastName || ""}`.trim() : user.email,
+        token: newToken,
+        baseUrl,
+      });
     }
 
     return NextResponse.json({

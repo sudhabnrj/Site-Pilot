@@ -1,23 +1,29 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 
 export interface IUser {
-  firstName: string;
-  lastName: string;
+  firstName?: string;
+  lastName?: string;
+  name?: string;
   email: string;
   password?: string;
   phone?: string;
   profileImage?: string;
+  image?: string;
+  avatar?: string;
   role: "admin" | "user";
   status: "active" | "inactive";
   isEmailVerified: boolean;
+  emailVerified?: boolean | Date | null;
   emailVerificationToken?: string | null;
   passwordResetToken?: string | null;
   passwordResetExpires?: Date | null;
   refreshToken?: string | null;
   lastLogin?: Date | null;
   provider: "local" | "google" | "github";
-  createdAt: Date;
-  updatedAt: Date;
+  providerAccountId?: string;
+  providerId?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface IUserDocument extends IUser, Document {}
@@ -26,12 +32,17 @@ const UserSchema: Schema<IUserDocument> = new Schema(
   {
     firstName: {
       type: String,
-      required: [true, "First name is required"],
+      default: "",
       trim: true,
     },
     lastName: {
       type: String,
-      required: [true, "Last name is required"],
+      default: "",
+      trim: true,
+    },
+    name: {
+      type: String,
+      default: "",
       trim: true,
     },
     email: {
@@ -54,6 +65,14 @@ const UserSchema: Schema<IUserDocument> = new Schema(
       type: String,
       default: "",
     },
+    image: {
+      type: String,
+      default: "",
+    },
+    avatar: {
+      type: String,
+      default: "",
+    },
     role: {
       type: String,
       enum: ["admin", "user"],
@@ -66,6 +85,10 @@ const UserSchema: Schema<IUserDocument> = new Schema(
     },
     isEmailVerified: {
       type: Boolean,
+      default: false,
+    },
+    emailVerified: {
+      type: Schema.Types.Mixed,
       default: false,
     },
     emailVerificationToken: {
@@ -93,6 +116,14 @@ const UserSchema: Schema<IUserDocument> = new Schema(
       type: String,
       enum: ["local", "google", "github"],
       default: "local",
+    },
+    providerAccountId: {
+      type: String,
+      default: "",
+    },
+    providerId: {
+      type: String,
+      default: "",
     },
   },
   {

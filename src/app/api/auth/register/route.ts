@@ -2,9 +2,8 @@ import { NextResponse } from "next/server";
 import { UserRepository } from "@/lib/user-repository";
 import { registerSchema } from "@/validators/auth.validator";
 import { hashPassword } from "@/lib/auth/password";
-import { generateAccessToken, generateRefreshToken } from "@/lib/auth/jwt";
-import { setAuthCookies } from "@/lib/auth/cookies";
 import { generateRandomToken } from "@/lib/auth/tokens";
+import { sendVerificationEmail, getAppBaseUrl } from "@/lib/email";
 
 export async function POST(req: Request) {
   try {
@@ -45,27 +44,21 @@ export async function POST(req: Request) {
       isEmailVerified: false,
       emailVerificationToken: verificationToken,
       provider: "local",
-      lastLogin: new Date(),
     });
 
-    const tokenPayload = {
-      userId: (newUser._id || newUser.id).toString(),
-      email: newUser.email,
-      role: newUser.role,
-    };
-
-    const accessToken = generateAccessToken(tokenPayload);
-    const refreshToken = generateRefreshToken(tokenPayload);
-
-    newUser.refreshToken = refreshToken;
-    if (newUser.save) await newUser.save();
-
-    await setAuthCookies(accessToken, refreshToken);
+    // Trigger activation / verification email with dynamic base URL
+    const baseUrl = getAppBaseUrl(req);
+    await sendVerificationEmail({
+      to: newUser.email,
+      name: `${newUser.firstName} ${newUser.lastName}`,
+      token: verificationToken,
+      baseUrl,
+    });
 
     return NextResponse.json(
       {
         success: true,
-        message: "Account created successfully",
+        message: "Registration successful! A verification email has been sent to your account.",
         user: {
           id: newUser._id || newUser.id,
           firstName: newUser.firstName,
@@ -73,8 +66,7 @@ export async function POST(req: Request) {
           email: newUser.email,
           role: newUser.role,
           status: newUser.status,
-          isEmailVerified: newUser.isEmailVerified,
-          createdAt: newUser.createdAt,
+          isEmailVerified: false,
         },
       },
       { status: 201 }

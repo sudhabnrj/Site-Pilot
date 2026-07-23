@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Globe, Bell, Moon, Sun, Menu, ChevronDown, Plus, LogOut, User, Settings, CreditCard } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+import { signOut } from "next-auth/react";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { logout } from "@/store/slices/auth-slice";
 
@@ -32,21 +33,37 @@ export function Header({ onMobileMenuToggle, className }: HeaderProps) {
   const handleLogout = async () => {
     setIsUserMenuOpen(false);
     try {
+      await signOut({ redirect: false });
+    } catch {
+      // Ignore NextAuth signOut error
+    }
+    try {
       await fetch("/api/auth/logout", { method: "POST" });
     } catch {
       // Ignore API errors
     } finally {
       dispatch(logout());
-      router.push("/login");
-      router.refresh();
+      window.location.href = "/login";
     }
   };
 
-  const initials = user
-    ? `${user.firstName[0] || ""}${user.lastName[0] || ""}`.toUpperCase()
-    : "JD";
-  const fullName = user ? `${user.firstName} ${user.lastName}` : "John Doe";
-  const userEmail = user?.email || "john@example.com";
+  const displayName = user
+    ? user.firstName || user.lastName
+      ? `${user.firstName || ""} ${user.lastName || ""}`.trim()
+      : (user as any).name || "User"
+    : "Guest User";
+
+  const initials = displayName
+    ? displayName
+        .split(" ")
+        .map((n: string) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : "GU";
+
+  const fullName = displayName;
+  const userEmail = user?.email || "";
 
   // Close menus when clicking outside
   useEffect(() => {

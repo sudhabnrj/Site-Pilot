@@ -67,7 +67,7 @@ export function PdfReportPreviewPaper({
         </div>
         <div className="text-right select-none">
           <div className="font-display text-lg font-black text-blue-600 tracking-tight leading-none select-none">
-            AuditAI
+            Site Pilot
           </div>
           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1 select-none">
             Certified Analysis
@@ -165,7 +165,7 @@ export function PdfReportPreviewPaper({
       {/* Footer Info */}
       <footer className="mt-auto pt-8 border-t border-slate-100 flex justify-between items-center text-slate-400 text-xs select-none">
         <div className="flex items-center gap-3">
-          <span className="font-display text-sm font-black text-blue-600">AuditAI</span>
+          <span className="font-display text-sm font-black text-blue-600">Site Pilot</span>
           <div className="h-4 w-px bg-slate-200" />
           <p className="font-semibold text-[10px]">Enterprise Web Analysis Report</p>
         </div>

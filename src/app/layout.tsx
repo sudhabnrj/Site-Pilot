@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import { geistFont, interFont } from "@/lib/fonts";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { StoreProvider } from "@/components/providers/store-provider";
+import { AuthProvider } from "@/components/providers/session-provider";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "SitePilot — AI Website Audit Dashboard",
+  title: "Site Pilot — AI Website Audit Dashboard",
   description:
     "AI-powered website audit platform. Analyze performance, SEO, accessibility, and security with intelligent insights and actionable recommendations.",
   keywords: ["website audit", "SEO", "performance", "accessibility", "AI insights"],
@@ -34,9 +36,12 @@ export default function RootLayout({
         />
       </head>
       <body className={`${geistFont.variable} ${interFont.variable}`}>
-        <StoreProvider>
-          <DashboardShell>{children}</DashboardShell>
-        </StoreProvider>
+        <AuthProvider>
+          <StoreProvider>
+            <DashboardShell>{children}</DashboardShell>
+            <Toaster position="top-right" richColors closeButton />
+          </StoreProvider>
+        </AuthProvider>
       </body>
     </html>
   );

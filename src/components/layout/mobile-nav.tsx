@@ -4,6 +4,7 @@ import { NavItem } from "@/components/ui/nav-item";
 import { BRAND, SIDEBAR_NAV_ITEMS, SIDEBAR_BOTTOM_ITEMS } from "@/constants/navigation";
 import { Brain, X, Zap } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+import { useAppSelector } from "@/store";
 
 interface MobileNavProps {
   open: boolean;
@@ -11,6 +12,9 @@ interface MobileNavProps {
 }
 
 export function MobileNav({ open, onOpenChange }: MobileNavProps) {
+  const user = useAppSelector((state) => state.auth.user);
+  const isAdmin = user?.role === "admin";
+
   return (
     <AnimatePresence>
       {open && (
@@ -71,13 +75,15 @@ export function MobileNav({ open, onOpenChange }: MobileNavProps) {
               </div>
             </nav>
 
-            {/* Upgrade CTA */}
-            <div className="mt-auto pt-4">
-              <button className="flex w-full items-center justify-center gap-2 rounded-full bg-blue-600 px-4 py-2.5 text-sm font-bold text-white shadow-md hover:bg-blue-700 active:scale-95 transition-all">
-                <Zap className="h-4 w-4" aria-hidden="true" />
-                Upgrade to Pro
-              </button>
-            </div>
+            {/* Upgrade CTA (Hidden for Admin) */}
+            {!isAdmin && (
+              <div className="mt-auto pt-4">
+                <button className="flex w-full items-center justify-center gap-2 rounded-full bg-blue-600 px-4 py-2.5 text-sm font-bold text-white shadow-md hover:bg-blue-700 active:scale-95 transition-all">
+                  <Zap className="h-4 w-4" aria-hidden="true" />
+                  Upgrade to Pro
+                </button>
+              </div>
+            )}
           </motion.aside>
         </>
       )}

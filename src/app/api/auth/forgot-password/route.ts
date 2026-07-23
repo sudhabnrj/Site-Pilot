@@ -3,6 +3,7 @@ import { connectToDatabase } from "@/lib/mongodb";
 import { User } from "@/models/user.model";
 import { forgotPasswordSchema } from "@/validators/auth.validator";
 import { generatePasswordResetToken } from "@/lib/auth/tokens";
+import { sendPasswordResetEmail, getAppBaseUrl } from "@/lib/email";
 
 export async function POST(req: Request) {
   try {
@@ -30,6 +31,15 @@ export async function POST(req: Request) {
       user.passwordResetToken = hashedToken;
       user.passwordResetExpires = expiresAt;
       await user.save();
+
+      // Send password reset email via Nodemailer
+      const baseUrl = getAppBaseUrl(req);
+      await sendPasswordResetEmail({
+        to: user.email,
+        name: user.firstName ? `${user.firstName} ${user.lastName || ""}`.trim() : user.email,
+        token: hashedToken,
+        baseUrl,
+      });
     }
 
     // Security best practice: Always return 200 regardless of whether email exists

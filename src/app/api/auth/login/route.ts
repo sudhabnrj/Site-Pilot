@@ -48,6 +48,17 @@ export async function POST(req: Request) {
       );
     }
 
+    if (!user.isEmailVerified) {
+      return NextResponse.json(
+        {
+          success: false,
+          emailUnverified: true,
+          message: "Please verify your email address before logging in. Check your inbox for the activation link.",
+        },
+        { status: 403 }
+      );
+    }
+
     const tokenPayload = {
       userId: (user._id || user.id).toString(),
       email: user.email,

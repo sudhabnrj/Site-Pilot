@@ -28,7 +28,7 @@ export function AiRecommendations({ recommendations, className }: AiRecommendati
         </div>
       </div>
 
-      <div className="space-y-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {recommendations.map((rec, index) => {
           const IconComponent = (LucideIcons as unknown as Record<string, LucideIcon>)[rec.icon];
 

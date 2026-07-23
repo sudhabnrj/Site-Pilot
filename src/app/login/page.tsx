@@ -1,19 +1,38 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AuthCard } from "@/components/auth/auth-card";
 import { useAppDispatch } from "@/store";
 import { setCredentials } from "@/store/slices/auth-slice";
 import { LoginInput } from "@/validators/auth.validator";
+import { useSocialLogin } from "@/hooks/useSocialLogin";
+import { Brain } from "lucide-react";
+import { toast } from "sonner";
 
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const dispatch = useAppDispatch();
+  const { handleSocialLogin, isLoading: isSocialLoading } = useSocialLogin();
 
   const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+
+  // Listen for OAuth callback errors in searchParams
+  useEffect(() => {
+    const oauthError = searchParams.get("error");
+    if (oauthError) {
+      let message = "OAuth sign-in failed. Please try again.";
+      if (oauthError === "AccessDenied" || oauthError === "Callback") {
+        message = "Login was cancelled or access was denied.";
+      } else if (oauthError === "OAuthSignin" || oauthError === "OAuthCallback") {
+        message = "Failed to communicate with authentication provider.";
+      }
+      setServerError(message);
+      toast.error("Authentication Error", { description: message });
+    }
+  }, [searchParams]);
 
   const handleSignIn = async (data: LoginInput) => {
     setIsLoading(true);
@@ -29,26 +48,39 @@ function LoginContent() {
       const result = await res.json();
 
       if (!res.ok || !result.success) {
-        setServerError(result.message || "Failed to sign in. Please try again.");
+        const errorMsg = result.message || "Failed to sign in. Please try again.";
+        setServerError(errorMsg);
         setIsLoading(false);
+
+        if (result.emailUnverified) {
+          toast.warning("Account Unverified", {
+            description: errorMsg,
+          });
+        } else {
+          toast.error("Login Failed", {
+            description: errorMsg,
+          });
+        }
         return;
       }
+
+      toast.success("Login Successful", {
+        description: `Welcome back, ${result.user.firstName || result.user.name || "User"}!`,
+      });
 
       // Update Redux state with user credentials
       dispatch(setCredentials({ user: result.user }));
 
-      // Redirect to return url or Dashboard (/)
-      const redirectUrl = searchParams.get("from") || "/";
+      // Redirect to return url or Dashboard (/dashboard)
+      const redirectUrl = searchParams.get("from") || "/dashboard";
       router.push(redirectUrl);
       router.refresh();
     } catch (err: any) {
-      setServerError("Network error. Please check your connection and try again.");
+      const netMsg = "Network error. Please check your connection and try again.";
+      setServerError(netMsg);
+      toast.error("Network Error", { description: netMsg });
       setIsLoading(false);
     }
-  };
-
-  const handleSocialLogin = (provider: string) => {
-    alert(`OAuth login with ${provider} is coming soon!`);
   };
 
   const handleForgotPassword = () => {
@@ -60,7 +92,19 @@ function LoginContent() {
   };
 
   return (
-    <div className="w-full max-w-[440px] flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700 select-none">
+    <div className="w-full max-w-[480px] flex flex-col items-center animate-in fade-in slide-in-from-bottom-4 duration-700 select-none">
+      {/* Brand Logo Header */}
+      <div className="flex justify-center mb-6">
+        <div className="flex items-center gap-2">
+          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/20 text-white">
+            <Brain className="h-6 w-6" />
+          </div>
+          <span className="font-display text-2xl font-bold tracking-tight text-slate-800">
+            Site Pilot
+          </span>
+        </div>
+      </div>
+
       {/* Central Login Card */}
       <AuthCard
         onSignIn={handleSignIn}
@@ -68,30 +112,8 @@ function LoginContent() {
         onForgotPassword={handleForgotPassword}
         onSignUp={handleSignUp}
         serverError={serverError}
-        isLoading={isLoading}
+        isLoading={isLoading || isSocialLoading}
       />
-
-      {/* Subtle System Status Bar */}
-      <div className="flex justify-between items-center px-4 text-[10px] font-black text-slate-400 select-none">
-        <div className="flex items-center gap-2">
-          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-          <span className="uppercase tracking-wider">System Operational</span>
-        </div>
-        <div className="flex gap-4 uppercase tracking-wider">
-          <button
-            onClick={() => alert("Privacy Policy terms: AuditAI protects your data.")}
-            className="hover:text-slate-600 transition-colors cursor-pointer"
-          >
-            Privacy
-          </button>
-          <button
-            onClick={() => alert("Terms of Service: By using AuditAI you agree to system guidelines.")}
-            className="hover:text-slate-600 transition-colors cursor-pointer"
-          >
-            Terms
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

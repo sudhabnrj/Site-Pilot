@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { NavItem } from "@/components/ui/nav-item";
 import { BRAND, SIDEBAR_NAV_ITEMS, SIDEBAR_BOTTOM_ITEMS } from "@/constants/navigation";
 import { Brain, Zap, ChevronLeft, ChevronRight, LogOut } from "lucide-react";
+import { signOut } from "next-auth/react";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { logout } from "@/store/slices/auth-slice";
 
@@ -18,24 +19,41 @@ export function Sidebar({ className, isCollapsed = false, onToggle }: SidebarPro
   const router = useRouter();
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
+  const isAdmin = user?.role === "admin";
 
   const handleLogout = async () => {
+    try {
+      await signOut({ redirect: false });
+    } catch {
+      // Ignore NextAuth signOut error
+    }
     try {
       await fetch("/api/auth/logout", { method: "POST" });
     } catch {
       // Ignore API errors
     } finally {
       dispatch(logout());
-      router.push("/login");
-      router.refresh();
+      window.location.href = "/login";
     }
   };
 
-  const initials = user
-    ? `${user.firstName[0] || ""}${user.lastName[0] || ""}`.toUpperCase()
-    : "JD";
-  const fullName = user ? `${user.firstName} ${user.lastName}` : "John Doe";
-  const userEmail = user?.email || "john@example.com";
+  const displayName = user
+    ? user.firstName || user.lastName
+      ? `${user.firstName || ""} ${user.lastName || ""}`.trim()
+      : (user as any).name || "User"
+    : "Guest User";
+
+  const initials = displayName
+    ? displayName
+        .split(" ")
+        .map((n: string) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : "GU";
+
+  const fullName = displayName;
+  const userEmail = user?.email || "";
 
   return (
     <aside
@@ -86,33 +104,35 @@ export function Sidebar({ className, isCollapsed = false, onToggle }: SidebarPro
         </div>
       </nav>
 
-      {/* Upgrade card / premium promo */}
-      <div className="mt-auto pt-4 pb-4">
-        {isCollapsed ? (
-          <button
-            className="flex h-10 w-10 mx-auto items-center justify-center rounded-full bg-blue-600 text-white shadow-md hover:bg-blue-700 active:scale-95 transition-all relative group"
-            aria-label="Upgrade to Pro"
-          >
-            <Zap className="h-4 w-4" aria-hidden="true" />
-            <span className="absolute left-full ml-3 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">
-              Upgrade to Pro
-            </span>
-          </button>
-        ) : (
-          <div className="rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 p-4 text-white shadow-md relative overflow-hidden">
-            <div className="absolute -right-6 -bottom-6 opacity-10">
-              <Zap className="h-24 w-24" />
-            </div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-blue-100">SitePilot Pro</p>
-            <p className="mt-1 text-xs font-medium text-blue-50 leading-relaxed">
-              Get unlimited audits, deep AI recommendations, and PDF exports.
-            </p>
-            <button className="mt-3 w-full rounded-full bg-white py-2 text-xs font-bold text-blue-700 hover:bg-blue-50 active:scale-95 transition-all shadow-sm">
-              Upgrade Now
+      {/* Upgrade card / premium promo (hidden for admin role) */}
+      {!isAdmin && (
+        <div className="mt-auto pt-4 pb-4">
+          {isCollapsed ? (
+            <button
+              className="flex h-10 w-10 mx-auto items-center justify-center rounded-full bg-blue-600 text-white shadow-md hover:bg-blue-700 active:scale-95 transition-all relative group"
+              aria-label="Upgrade to Pro"
+            >
+              <Zap className="h-4 w-4" aria-hidden="true" />
+              <span className="absolute left-full ml-3 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">
+                Upgrade to Pro
+              </span>
             </button>
-          </div>
-        )}
-      </div>
+          ) : (
+            <div className="rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 p-4 text-white shadow-md relative overflow-hidden">
+              <div className="absolute -right-6 -bottom-6 opacity-10">
+                <Zap className="h-24 w-24" />
+              </div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-blue-100">Site Pilot Pro</p>
+              <p className="mt-1 text-xs font-medium text-blue-50 leading-relaxed">
+                Get unlimited audits, deep AI recommendations, and PDF exports.
+              </p>
+              <button className="mt-3 w-full rounded-full bg-white py-2 text-xs font-bold text-blue-700 hover:bg-blue-50 active:scale-95 transition-all shadow-sm cursor-pointer">
+                Upgrade Now
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* User Profile Block */}
       <div className="border-t border-slate-200 pt-4">

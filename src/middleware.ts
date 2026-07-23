@@ -37,13 +37,18 @@ export function middleware(request: NextRequest) {
 
   const accessToken = request.cookies.get("accessToken")?.value;
   const refreshToken = request.cookies.get("refreshToken")?.value;
-  const isAuthenticated = Boolean(accessToken || refreshToken);
+  const nextAuthToken =
+    request.cookies.get("next-auth.session-token")?.value ||
+    request.cookies.get("__Secure-next-auth.session-token")?.value ||
+    request.cookies.get("authjs.session-token")?.value;
+
+  const isAuthenticated = Boolean(accessToken || refreshToken || nextAuthToken);
 
   const isAuthPage = AUTH_PAGES.some((page) => pathname.startsWith(page));
   const isApiRoute = pathname.startsWith("/api/");
-  const isPublicApiRoute = PUBLIC_API_ROUTES.some((route) =>
-    pathname.startsWith(route)
-  );
+  const isPublicApiRoute =
+    pathname.startsWith("/api/auth/") ||
+    PUBLIC_API_ROUTES.some((route) => pathname.startsWith(route));
 
   // 1. API Route Protection
   if (isApiRoute) {
@@ -59,15 +64,15 @@ export function middleware(request: NextRequest) {
   // 2. Unauthenticated user accessing protected page -> Redirect to /login
   if (!isAuthenticated && !isAuthPage) {
     const loginUrl = new URL("/login", request.url);
-    if (pathname !== "/") {
+    if (pathname !== "/" && pathname !== "/dashboard") {
       loginUrl.searchParams.set("from", pathname);
     }
     return NextResponse.redirect(loginUrl);
   }
 
-  // 3. Authenticated user accessing auth pages -> Redirect to Dashboard (/)
+  // 3. Authenticated user accessing auth pages -> Redirect to Dashboard (/dashboard or /)
   if (isAuthenticated && isAuthPage) {
-    return NextResponse.redirect(new URL("/", request.url));
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
   return NextResponse.next();

@@ -21,8 +21,8 @@ import {
 export default function DashboardPage() {
   return (
     <div className="flex flex-col gap-8 pb-16">
-      {/* Title & Actions */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      {/* Title & Description Header */}
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-3xl font-black tracking-tight text-slate-900">
             Dashboard Overview
@@ -31,9 +31,6 @@ export default function DashboardPage() {
             Monitor and audit your website's performance, SEO, accessibility, and security.
           </p>
         </div>
-        <button className="inline-flex shrink-0 items-center justify-center rounded-full bg-blue-600 px-5 py-2 text-sm font-bold text-white shadow-sm hover:bg-blue-700 active:scale-95 transition-all">
-          Scan Now
-        </button>
       </div>
 
       {/* KPI Cards Grid */}
@@ -54,12 +51,16 @@ export default function DashboardPage() {
           <IssuesTable issues={MOCK_ISSUES} />
         </div>
 
-        {/* Right Side: Overall Health, Preview and Recommendations */}
+        {/* Right Side: Overall Health & Preview */}
         <div className="flex flex-col gap-8">
           <WebsiteHealthCard data={WEBSITE_HEALTH} />
           <WebsitePreview url="example.com" lastScan="2 minutes ago" />
-          <AiRecommendations recommendations={MOCK_RECOMMENDATIONS} />
         </div>
+      </div>
+
+      {/* Full Width AI Insights & Fixes Panel */}
+      <div className="w-full">
+        <AiRecommendations recommendations={MOCK_RECOMMENDATIONS} />
       </div>
 
       {/* Floating AI Chat Assistant */}

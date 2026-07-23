@@ -39,7 +39,7 @@ export function AuthTextField({
   return (
     <div className="flex flex-col gap-1.5 select-none">
       <div className="flex justify-between items-center select-none">
-        <label htmlFor={id} className="text-xs font-black text-slate-700 tracking-wide uppercase select-none">
+        <label htmlFor={id} className="text-xs font-medium text-slate-700 select-none">
           {label}
         </label>
         {rightElement}

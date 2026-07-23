@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AuthSocialButton } from "./auth-social-button";
+import { SocialAuth } from "./SocialAuth";
 import { AuthTextField } from "./auth-text-field";
-import { Mail, Lock, LogIn, Loader2 } from "lucide-react";
+import { Mail, Lock, LogIn, Loader2, ArrowRight } from "lucide-react";
 import { GlassCard } from "@/components/ui/glass-card";
 import { loginSchema, type LoginInput } from "@/validators/auth.validator";
 
@@ -27,7 +26,6 @@ export function AuthCard({
   isLoading = false,
 }: AuthCardProps) {
   const {
-    register,
     handleSubmit,
     setValue,
     watch,
@@ -50,30 +48,13 @@ export function AuthCard({
   };
 
   return (
-    <GlassCard className="w-full max-w-[440px] p-8 border-slate-200/80 shadow-2xl rounded-2xl flex flex-col gap-6 bg-white/80">
+    <GlassCard className="w-full max-w-[480px] p-8 border-slate-200/80 shadow-2xl rounded-2xl flex flex-col gap-6 bg-white/80">
       {/* Header Info */}
-      <div className="flex flex-col items-center gap-4 text-center select-none">
-        <div className="flex items-center gap-2 text-blue-600">
-          <svg
-            fill="currentColor"
-            viewBox="0 0 48 48"
-            className="h-8 w-8 animate-pulse"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              clipRule="evenodd"
-              d="M12.0799 24L4 19.2479L9.95537 8.75216L18.04 13.4961L18.0446 4H29.9554L29.96 13.4961L38.0446 8.75216L44 19.2479L35.92 24L44 28.7521L38.0446 39.2479L29.96 34.5039L29.9554 44H18.0446L18.04 34.5039L9.95537 39.2479L4 28.7521L12.0799 24Z"
-              fillRule="evenodd"
-            />
-          </svg>
-          <span className="text-xl font-black tracking-tight leading-none">AuditAI</span>
-        </div>
-        <div>
-          <h1 className="text-xl font-black text-slate-800 tracking-tight">Welcome back</h1>
-          <p className="text-xs font-semibold text-slate-400 mt-1 select-none">
-            Please enter your details to sign in.
-          </p>
-        </div>
+      <div className="flex flex-col items-center gap-1 text-center select-none">
+        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Welcome back</h1>
+        <p className="text-xs font-semibold text-slate-400 mt-1 select-none">
+          Please enter your details to sign in.
+        </p>
       </div>
 
       {/* Global Server Error Banner */}
@@ -85,18 +66,10 @@ export function AuthCard({
       )}
 
       {/* Social Login Integrations */}
-      <div className="grid grid-cols-2 gap-3 select-none">
-        <AuthSocialButton
-          label="Google"
-          iconSrc="https://lh3.googleusercontent.com/aida-public/AB6AXuBEh54DmF99cDH7YjBz7GQnKreGim6V-Y9Wapoh4XLnJtfPo6Oo-6F5Ukt_NbhDoUvlKJnGhaYrx_cxaLC_Q344PGGEpxrHolccLyzrU7mr2sWOJc6jqY7UwbKVcOaZltFSS9QBD78R-AFw-pxlHCbnJYjQHCZuit_bXXZUD3-JpRe8Jc6_toi-INICN9-L-hLsBW-deKoWMNMWWqWtZ6K3fwTEYKiwc0LPUTGI69vddd7xs8yNxQAgZg"
-          onClick={() => onSocialLogin?.("Google")}
-        />
-        <AuthSocialButton
-          label="GitHub"
-          iconSrc="https://lh3.googleusercontent.com/aida-public/AB6AXuCax2eR1BeoOD-SnglPc3NxRLPGIvx_nvJK-FH2DN_O4DDIyOzTZt0cTpFLfUAJsPXjHDFJxhn5KhSz5c_5SkZoLxvBZp5FeJCIlaIgjzhWCkDu9RH1jjFAkeVxiit9dU6DRjBzxAehN_DJxTZM2fpXXsg9e57ezqH5gnprMDM_X_vTHRnAGy0Km0s8sxA9podMWKv5nWTDsM21PH8jcLPzCuqxNeyOMBtTX3Aojd3S5AkhdAgyzrnBgA"
-          onClick={() => onSocialLogin?.("GitHub")}
-        />
-      </div>
+      <SocialAuth
+        onSocialLogin={onSocialLogin}
+        isLoading={isLoading}
+      />
 
       {/* Divider */}
       <div className="relative flex items-center py-1 select-none">
@@ -120,7 +93,7 @@ export function AuthCard({
           error={errors.email?.message}
           disabled={isLoading}
         />
-        
+
         <AuthTextField
           id="password"
           label="Password"
@@ -154,10 +127,10 @@ export function AuthCard({
               <span>Signing In...</span>
             </>
           ) : (
-            <>
-              <span>Sign In</span>
-              <LogIn className="h-4 w-4 shrink-0 text-white/90" />
-            </>
+            <div className="flex items-center justify-center gap-2">
+              <span className="leading-[1px]">Sign In</span>
+              <ArrowRight className="h-4 w-4 shrink-0 text-white/90" />
+            </div>
           )}
         </button>
       </form>
@@ -169,7 +142,7 @@ export function AuthCard({
           <button
             type="button"
             onClick={onSignUp}
-            className="text-blue-600 font-extrabold hover:underline cursor-pointer"
+            className="text-blue-600 font-medium hover:underline cursor-pointer"
           >
             Sign Up
           </button>

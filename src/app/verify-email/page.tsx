@@ -4,14 +4,18 @@ import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Mail, ExternalLink, ArrowLeft, CheckCircle2, Loader2, Brain } from "lucide-react";
+import { toast } from "sonner";
 
 function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
+  const urlEmail = searchParams.get("email") || "";
 
   const [verifying, setVerifying] = useState(Boolean(token));
   const [verified, setVerified] = useState(false);
   const [resending, setResending] = useState(false);
+  const [emailInput, setEmailInput] = useState(urlEmail);
+  const [showResendInput, setShowResendInput] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -23,12 +27,18 @@ function VerifyEmailContent() {
         const data = await res.json();
         if (data.success) {
           setVerified(true);
-          setMessage("Your email address has been verified successfully!");
+          const successMsg = "Your email address has been verified successfully!";
+          setMessage(successMsg);
+          toast.success("Email Verified", { description: successMsg });
         } else {
-          setMessage(data.message || "Invalid or expired verification link.");
+          const failMsg = data.message || "Invalid or expired verification link.";
+          setMessage(failMsg);
+          toast.error("Verification Failed", { description: failMsg });
         }
       } catch (err) {
-        setMessage("Verification failed. Please try again.");
+        const errStr = "Verification failed. Please try again.";
+        setMessage(errStr);
+        toast.error("Error", { description: errStr });
       } finally {
         setVerifying(false);
       }
@@ -37,18 +47,32 @@ function VerifyEmailContent() {
     verifyToken();
   }, [token]);
 
-  const handleResend = async () => {
+  const handleResend = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+
+    const emailToSend = emailInput.trim();
+    if (!emailToSend) {
+      setShowResendInput(true);
+      toast.warning("Email Required", { description: "Please enter your email to resend verification link." });
+      return;
+    }
+
     setResending(true);
     try {
       const res = await fetch("/api/auth/resend-verification", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: "user@example.com" }),
+        body: JSON.stringify({ email: emailToSend }),
       });
       const data = await res.json();
-      setMessage(data.message || "Verification email sent.");
+      const msg = data.message || "Verification email sent.";
+      setMessage(msg);
+      toast.success("Verification Email Sent", { description: msg });
+      setShowResendInput(false);
     } catch {
-      setMessage("Failed to resend verification email.");
+      const failMsg = "Failed to resend verification email.";
+      setMessage(failMsg);
+      toast.error("Resend Error", { description: failMsg });
     } finally {
       setResending(false);
     }
@@ -62,7 +86,7 @@ function VerifyEmailContent() {
           <Brain className="h-6 w-6" />
         </div>
         <span className="font-display text-2xl font-bold tracking-tight text-slate-800">
-          AuditAI
+          Site Pilot
         </span>
       </div>
 
@@ -80,7 +104,7 @@ function VerifyEmailContent() {
             </div>
             <h1 className="text-xl font-bold text-slate-800">Email Verified!</h1>
             <p className="text-xs font-semibold text-slate-500 max-w-[300px] leading-relaxed">
-              Your email has been confirmed. You can now access all features of AuditAI.
+              Your email has been confirmed. You can now access all features of Site Pilot.
             </p>
             <Link
               href="/login"
@@ -99,13 +123,26 @@ function VerifyEmailContent() {
             {/* Heading & Subtext */}
             <h1 className="text-2xl font-bold text-slate-800 mb-2 tracking-tight">Check your inbox</h1>
             <p className="text-xs font-semibold text-slate-500 max-w-[320px] mb-6 leading-relaxed">
-              We've sent a link to your email address. Please click the link to verify your account.
+              We've sent a link to your email address. Please click the link to verify and activate your account.
             </p>
 
             {message && (
               <div className="mb-4 text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200 px-4 py-2.5 rounded-xl w-full">
                 {message}
               </div>
+            )}
+
+            {/* Resend email form if needed */}
+            {showResendInput && (
+              <form onSubmit={handleResend} className="w-full mb-4 space-y-2">
+                <input
+                  type="email"
+                  placeholder="Enter your registered email"
+                  value={emailInput}
+                  onChange={(e) => setEmailInput(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-700 font-semibold focus:outline-none focus:border-blue-600"
+                />
+              </form>
             )}
 
             {/* Actions */}
@@ -121,7 +158,7 @@ function VerifyEmailContent() {
 
               <button
                 type="button"
-                onClick={handleResend}
+                onClick={showResendInput ? () => handleResend() : () => handleResend()}
                 disabled={resending}
                 className="w-full h-12 bg-white border border-slate-200 text-slate-700 font-bold text-xs rounded-xl hover:bg-slate-50 transition-all active:scale-[0.98] disabled:opacity-50 cursor-pointer"
               >

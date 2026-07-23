@@ -2,9 +2,9 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AuthSocialButton } from "./auth-social-button";
+import { SocialAuth } from "./SocialAuth";
 import { AuthTextField } from "./auth-text-field";
-import { Mail, Lock, User, Shield, ArrowRight, Loader2 } from "lucide-react";
+import { Mail, Lock, User, ArrowRight, Loader2 } from "lucide-react";
 import { GlassCard } from "@/components/ui/glass-card";
 import { registerSchema, type RegisterInput } from "@/validators/auth.validator";
 
@@ -58,21 +58,11 @@ export function SignUpCard({
   return (
     <GlassCard className="w-full max-w-[480px] p-8 border-slate-200/80 shadow-2xl rounded-2xl flex flex-col gap-6 bg-white/80">
       {/* Header section */}
-      <div className="flex flex-col gap-2 select-none">
-        <div className="flex items-center gap-2 select-none">
-          <div className="w-10 h-10 bg-blue-50 border border-blue-100/50 rounded-xl flex items-center justify-center text-blue-600 shrink-0 shadow-sm">
-            <Shield className="h-6 w-6" />
-          </div>
-          <span className="font-display text-xl font-black text-slate-800 tracking-tight leading-none">
-            AuditAI
-          </span>
-        </div>
-        <div className="mt-4">
-          <h1 className="text-xl font-black text-slate-800 tracking-tight">Create your account</h1>
-          <p className="text-xs font-semibold text-slate-400 mt-1 select-none">
-            Start auditing with precision and AI-driven insights.
-          </p>
-        </div>
+      <div className="flex flex-col items-center gap-1 text-center select-none">
+        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Create your account</h1>
+        <p className="text-xs font-semibold text-slate-400 mt-1 select-none">
+          Start auditing with precision and AI-driven insights.
+        </p>
       </div>
 
       {/* Global Server Error */}
@@ -89,7 +79,7 @@ export function SignUpCard({
           <AuthTextField
             id="firstName"
             label="First Name"
-            placeholder="John"
+            placeholder="First name"
             type="text"
             icon={User}
             value={firstNameVal}
@@ -100,7 +90,7 @@ export function SignUpCard({
           <AuthTextField
             id="lastName"
             label="Last Name"
-            placeholder="Doe"
+            placeholder="Last name"
             type="text"
             icon={User}
             value={lastNameVal}
@@ -159,7 +149,7 @@ export function SignUpCard({
             <button
               type="button"
               onClick={onTermsClick}
-              className="text-blue-600 font-extrabold hover:underline"
+              className="text-blue-600 font-bold hover:underline cursor-pointer"
             >
               Terms of Service
             </button>{" "}
@@ -167,7 +157,7 @@ export function SignUpCard({
             <button
               type="button"
               onClick={onPrivacyClick}
-              className="text-blue-600 font-extrabold hover:underline"
+              className="text-blue-600 font-bold hover:underline cursor-pointer"
             >
               Privacy Policy
             </button>
@@ -205,18 +195,10 @@ export function SignUpCard({
       </div>
 
       {/* Social login oauth buttons */}
-      <div className="grid grid-cols-2 gap-3 select-none">
-        <AuthSocialButton
-          label="Google"
-          iconSrc="https://lh3.googleusercontent.com/aida-public/AB6AXuB8-Znmxt8QQEI2g9xJD2CyzP8kWX6ZVcd9ICs1wu2G6VIrOKQl1Con_osQpydPxh-TOodQISYi25KjRHVYFMHKl-IaxcGNdzeACcaiZuSr85QC1k2RdeIYUMvTnWJ9FUJEEyYHIpHlJk9qUFNe5lfMqLfm7BaGidXzNAIWQcoya0bRBaMlRvXIKw6wgqpGymH1O7vHkPCo3kvdyzkEDe10Zp0qJcRFMf8XB_5MIUjxa4kN8e6rCUP9jg"
-          onClick={() => onSocialLogin?.("Google")}
-        />
-        <AuthSocialButton
-          label="GitHub"
-          iconSrc="https://lh3.googleusercontent.com/aida-public/AB6AXuB_OXzZ5s2m7y4kG4Lu5ogUqDpxa-oLy7cSfmRf1HKh2cpJ4pT3SppjKx2PPm8sUnvQ7Jx83T1r6KPSXl4P3IB9dshfV_ESTH5kzSfuYfKD2t6dPffDHrKStQ3cqLZZDYUtCSkYl4EgVKsZHInr48GIvWqDqHV1ANtMBgtDMxmC9lg_uTZbQ8D5YGRzm6HTqE_PHYCo3EXcUZmTZXtUdwfPkkjcSEx_pv2TJIa7Isqgaj6DkNGV6y_UuQ"
-          onClick={() => onSocialLogin?.("GitHub")}
-        />
-      </div>
+      <SocialAuth
+        onSocialLogin={onSocialLogin}
+        isLoading={isLoading}
+      />
 
       {/* Footer login toggle */}
       <div className="text-center pt-2 select-none">
@@ -225,7 +207,7 @@ export function SignUpCard({
           <button
             type="button"
             onClick={onLogIn}
-            className="text-blue-600 font-extrabold hover:underline cursor-pointer"
+            className="text-blue-600 font-medium hover:underline cursor-pointer"
           >
             Log In
           </button>
