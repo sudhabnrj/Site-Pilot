@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Globe, Bell, Moon, Sun, Menu, ChevronDown, Plus, LogOut, User, Settings, CreditCard, Loader2 } from "lucide-react";
@@ -8,7 +8,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { signOut } from "next-auth/react";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { logout } from "@/store/slices/auth-slice";
-import { executeAudit } from "@/store/slices/audit-slice";
+import { executeAudit, setCurrentReport } from "@/store/slices/audit-slice";
 import { toast } from "sonner";
 
 interface HeaderProps {
@@ -16,16 +16,24 @@ interface HeaderProps {
   className?: string;
 }
 
-const MOCK_WEBSITES = ["https://example.com", "https://my-saas.app", "https://blog.dev"];
-
 export function Header({ onMobileMenuToggle, className }: HeaderProps) {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
-  const isAuditing = useAppSelector((state) => state.audit.isAuditing);
+  const { isAuditing, reportsHistory, currentReport } = useAppSelector((state) => state.audit);
 
-  const [auditUrl, setAuditUrl] = useState("");
-  const [selectedWebsite, setSelectedWebsite] = useState(MOCK_WEBSITES[0]);
+  // Dynamic website list from DB audit reports
+  const websiteList = useMemo(() => {
+    const list = reportsHistory.map((r) => r.url || `https://${r.domain}`);
+    return Array.from(new Set(list.length > 0 ? list : ["https://example.com"]));
+  }, [reportsHistory]);
+
+  const [selectedWebsite, setSelectedWebsite] = useState<string>(
+    currentReport?.url || websiteList[0] || "https://example.com"
+  );
+  const [auditUrl, setAuditUrl] = useState<string>(
+    currentReport?.url || websiteList[0] || "https://example.com"
+  );
   const [isWebsitesOpen, setIsWebsitesOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -33,6 +41,28 @@ export function Header({ onMobileMenuToggle, className }: HeaderProps) {
 
   const websiteRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  // Sync selected website and input URL when currentReport changes
+  useEffect(() => {
+    if (currentReport?.url) {
+      setSelectedWebsite(currentReport.url);
+      setAuditUrl(currentReport.url);
+    }
+  }, [currentReport]);
+
+  const handleSelectWebsite = (siteUrl: string) => {
+    setSelectedWebsite(siteUrl);
+    setAuditUrl(siteUrl);
+    setIsWebsitesOpen(false);
+
+    // Find and set current report in store
+    const foundReport = reportsHistory.find(
+      (r) => r.url === siteUrl || `https://${r.domain}` === siteUrl || r.domain === siteUrl
+    );
+    if (foundReport) {
+      dispatch(setCurrentReport(foundReport));
+    }
+  };
 
   const handleAuditSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -45,11 +75,12 @@ export function Header({ onMobileMenuToggle, className }: HeaderProps) {
     }
 
     try {
-      await dispatch(executeAudit(cleanUrl)).unwrap();
+      const newReport = await dispatch(executeAudit(cleanUrl)).unwrap();
       toast.success("Audit Completed!", {
         description: `Successfully analyzed ${cleanUrl}`,
       });
-      setAuditUrl("");
+      setSelectedWebsite(newReport.url || cleanUrl);
+      setAuditUrl(newReport.url || cleanUrl);
       router.push("/");
       router.refresh();
     } catch (err: any) {
@@ -148,13 +179,10 @@ export function Header({ onMobileMenuToggle, className }: HeaderProps) {
                 className="absolute left-0 mt-2 w-48 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg ring-1 ring-black/5 z-50 focus:outline-none"
                 role="listbox"
               >
-                {MOCK_WEBSITES.map((site) => (
+                {websiteList.map((site: string) => (
                   <li key={site} role="option" aria-selected={site === selectedWebsite}>
                     <button
-                      onClick={() => {
-                        setSelectedWebsite(site);
-                        setIsWebsitesOpen(false);
-                      }}
+                      onClick={() => handleSelectWebsite(site)}
                       className={cn(
                         "w-full text-left rounded-lg px-3 py-2 text-xs font-medium transition-colors truncate cursor-pointer",
                         site === selectedWebsite
@@ -162,7 +190,7 @@ export function Header({ onMobileMenuToggle, className }: HeaderProps) {
                           : "text-slate-700 hover:bg-slate-50"
                       )}
                     >
-                      {site.replace("https://", "")}
+                      {site.replace(/^https?:\/\//, "")}
                     </button>
                   </li>
                 ))}

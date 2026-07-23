@@ -97,8 +97,50 @@ export default function ReportsPage() {
   };
 
   const handleExportCsv = () => {
-    toast.success("CSV Export Completed", {
-      description: "Downloaded audit history report data CSV.",
+    if (!reports || reports.length === 0) {
+      toast.error("No audit reports available to export.");
+      return;
+    }
+
+    const headers = [
+      "ID",
+      "Website Domain",
+      "Version",
+      "Tag",
+      "Date",
+      "Time",
+      "Overall Score",
+      "Performance Score",
+      "SEO Score",
+      "Accessibility Score",
+    ];
+
+    const rows = reports.map((r) => [
+      `"${r.id}"`,
+      `"${r.website}"`,
+      `"${r.version}"`,
+      `"${r.tag}"`,
+      `"${r.date}"`,
+      `"${r.time}"`,
+      r.score,
+      r.performance,
+      r.seo,
+      r.accessibility,
+    ]);
+
+    const csvData = [headers.join(","), ...rows.map((row) => row.join(","))].join("\n");
+    const blob = new Blob([csvData], { type: "text/csv;charset=utf-8;" });
+    const downloadUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = downloadUrl;
+    link.download = `site_pilot_audit_reports_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(downloadUrl);
+
+    toast.success("CSV Export Completed!", {
+      description: `Exported ${reports.length} report entries into CSV file.`,
     });
   };
 

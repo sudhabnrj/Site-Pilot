@@ -145,7 +145,7 @@ export default function DashboardPage() {
         {/* Right Side: Overall Health & Preview */}
         <div className="flex flex-col gap-8">
           <WebsiteHealthCard data={websiteHealth} />
-          <WebsitePreview url={previewUrl} lastScan={lastScanTime} />
+          <WebsitePreview url={previewUrl} screenshotUrl={currentReport?.screenshotUrl} lastScan={lastScanTime} />
         </div>
       </div>
 
