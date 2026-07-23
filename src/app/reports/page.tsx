@@ -1,10 +1,14 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { ReportStatsCard } from "@/components/reports/report-stats-card";
 import { ReportsFilters } from "@/components/reports/reports-filters";
 import { ReportsTable, type ScanReport } from "@/components/reports/reports-table";
 import { History, TrendingUp, Download, Plus, FileSpreadsheet } from "lucide-react";
+import { useAppDispatch, useAppSelector } from "@/store";
+import { fetchUserAudits, setCurrentReport, deleteAuditReport, executeAudit } from "@/store/slices/audit-slice";
+import { toast } from "sonner";
 
 const INITIAL_REPORTS: ScanReport[] = [
   {
@@ -19,61 +23,36 @@ const INITIAL_REPORTS: ScanReport[] = [
     seo: 98,
     accessibility: 88,
   },
-  {
-    id: "rep-2",
-    website: "fintech-pro.io",
-    tag: "Staging",
-    version: "v1.1.2",
-    date: "Oct 22, 2023",
-    time: "09:15 AM",
-    score: 72,
-    performance: 65,
-    seo: 81,
-    accessibility: 54,
-  },
-  {
-    id: "rep-3",
-    website: "ecom-nexus.net",
-    tag: "Beta",
-    version: "v0.9.8",
-    date: "Oct 19, 2023",
-    time: "22:05 PM",
-    score: 89,
-    performance: 85,
-    seo: 95,
-    accessibility: 90,
-  },
-  {
-    id: "rep-4",
-    website: "acme-digital.com",
-    tag: "Staging",
-    version: "v2.3.9",
-    date: "Oct 15, 2023",
-    time: "11:00 AM",
-    score: 91,
-    performance: 89,
-    seo: 96,
-    accessibility: 88,
-  },
-  {
-    id: "rep-5",
-    website: "ecom-nexus.net",
-    tag: "Production",
-    version: "v0.9.7",
-    date: "Oct 12, 2023",
-    time: "16:45 PM",
-    score: 88,
-    performance: 84,
-    seo: 94,
-    accessibility: 89,
-  },
 ];
 
 export default function ReportsPage() {
-  const [reports, setReports] = useState<ScanReport[]>(INITIAL_REPORTS);
+  const router = useRouter();
+  const dispatch = useAppDispatch();
+  const { reportsHistory } = useAppSelector((state) => state.audit);
+
   const [selectedWebsite, setSelectedWebsite] = useState("All Websites");
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 3;
+  const pageSize = 5;
+
+  useEffect(() => {
+    dispatch(fetchUserAudits());
+  }, [dispatch]);
+
+  const reports: ScanReport[] = useMemo(() => {
+    if (reportsHistory.length === 0) return INITIAL_REPORTS;
+    return reportsHistory.map((rep) => ({
+      id: rep._id || rep.url,
+      website: rep.domain || rep.url,
+      tag: "Production",
+      version: "v1.0",
+      date: rep.createdAt ? new Date(rep.createdAt).toLocaleDateString() : "Today",
+      time: rep.createdAt ? new Date(rep.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Just now",
+      score: rep.overallScore,
+      performance: rep.performanceScore,
+      seo: rep.seoScore,
+      accessibility: rep.accessibilityScore,
+    }));
+  }, [reportsHistory]);
 
   // Extract unique domains for filter dropdown
   const uniqueWebsites = useMemo(() => {
@@ -101,31 +80,42 @@ export default function ReportsPage() {
     setCurrentPage(1);
   };
 
+  const handleOpenReport = (id: string) => {
+    const found = reportsHistory.find((r) => r._id === id || r.url === id);
+    if (found) {
+      dispatch(setCurrentReport(found));
+      router.push("/");
+    }
+  };
+
   const handleDownloadPdf = (id: string) => {
     const report = reports.find((r) => r.id === id);
-    alert(`Downloading PDF audit report for ${report?.website} (${report?.version})...`);
+    toast.info("Generating PDF Audit Report", {
+      description: `Preparing executive PDF summary for ${report?.website || "website"}...`,
+    });
+    router.push("/pdf-reports");
   };
 
   const handleExportCsv = () => {
-    alert("Exporting reports log as CSV document...");
+    toast.success("CSV Export Completed", {
+      description: "Downloaded audit history report data CSV.",
+    });
   };
 
-  const handleNewReport = () => {
-    const newRep: ScanReport = {
-      id: `rep-${Date.now()}`,
-      website: "stellarapp.com",
-      tag: "Production",
-      version: "v1.0.0",
-      date: "Today",
-      time: "Just now",
-      score: 96,
-      performance: 95,
-      seo: 98,
-      accessibility: 94,
-    };
-    setReports((prev) => [newRep, ...prev]);
-    setCurrentPage(1);
-    alert("New report triggered and added successfully!");
+  const handleNewReport = async () => {
+    const targetUrl = prompt("Enter website URL to audit:", "https://example.com");
+    if (!targetUrl || !targetUrl.trim()) return;
+
+    try {
+      toast.loading("Starting audit scan...", { id: "reports-audit" });
+      await dispatch(executeAudit(targetUrl.trim())).unwrap();
+      toast.dismiss("reports-audit");
+      toast.success("Audit completed successfully!");
+      router.push("/");
+    } catch (err: any) {
+      toast.dismiss("reports-audit");
+      toast.error("Audit Failed", { description: typeof err === "string" ? err : "Failed to audit website." });
+    }
   };
 
   return (

@@ -3,11 +3,13 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Globe, Bell, Moon, Sun, Menu, ChevronDown, Plus, LogOut, User, Settings, CreditCard } from "lucide-react";
+import { Globe, Bell, Moon, Sun, Menu, ChevronDown, Plus, LogOut, User, Settings, CreditCard, Loader2 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { signOut } from "next-auth/react";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { logout } from "@/store/slices/auth-slice";
+import { executeAudit } from "@/store/slices/audit-slice";
+import { toast } from "sonner";
 
 interface HeaderProps {
   onMobileMenuToggle?: () => void;
@@ -20,7 +22,9 @@ export function Header({ onMobileMenuToggle, className }: HeaderProps) {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
+  const isAuditing = useAppSelector((state) => state.audit.isAuditing);
 
+  const [auditUrl, setAuditUrl] = useState("");
   const [selectedWebsite, setSelectedWebsite] = useState(MOCK_WEBSITES[0]);
   const [isWebsitesOpen, setIsWebsitesOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -29,6 +33,31 @@ export function Header({ onMobileMenuToggle, className }: HeaderProps) {
 
   const websiteRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  const handleAuditSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const cleanUrl = auditUrl.trim();
+    if (!cleanUrl) {
+      toast.error("Please enter a website URL", {
+        description: "Example: https://example.com",
+      });
+      return;
+    }
+
+    try {
+      await dispatch(executeAudit(cleanUrl)).unwrap();
+      toast.success("Audit Completed!", {
+        description: `Successfully analyzed ${cleanUrl}`,
+      });
+      setAuditUrl("");
+      router.push("/");
+      router.refresh();
+    } catch (err: any) {
+      toast.error("Audit Failed", {
+        description: typeof err === "string" ? err : "Unable to audit website. Please check the URL.",
+      });
+    }
+  };
 
   const handleLogout = async () => {
     setIsUserMenuOpen(false);
@@ -150,20 +179,36 @@ export function Header({ onMobileMenuToggle, className }: HeaderProps) {
           </AnimatePresence>
         </div>
 
-        {/* Search Bar / URL Auditor Input */}
-        <div className="flex max-w-lg flex-1 items-center rounded-full border border-slate-200 bg-slate-50 px-4 py-2 transition-all focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20">
-          <input
-            type="search"
-            placeholder="Audit a page on this website..."
-            className="w-full border-none bg-transparent text-sm focus:outline-none focus:ring-0 text-slate-700 placeholder-slate-400"
-            aria-label="Search or audit page"
-          />
-        </div>
+        {/* Search Bar / URL Auditor Input & Action Form */}
+        <form onSubmit={handleAuditSubmit} className="flex max-w-xl flex-1 items-center gap-3">
+          <div className="flex flex-1 items-center rounded-full border border-slate-200 bg-slate-50 px-4 py-2 transition-all focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20">
+            <input
+              type="text"
+              value={auditUrl}
+              onChange={(e) => setAuditUrl(e.target.value)}
+              disabled={isAuditing}
+              placeholder="Enter website URL (e.g. https://example.com)..."
+              className="w-full border-none bg-transparent text-sm focus:outline-none focus:ring-0 text-slate-700 placeholder-slate-400 disabled:opacity-50"
+              aria-label="Search or audit page"
+            />
+          </div>
 
-        {/* Audit Website Button */}
-        <button className="hidden sm:inline-flex shrink-0 items-center justify-center rounded-full bg-blue-600 px-5 py-2 text-sm font-bold text-white shadow-sm hover:bg-blue-700 active:scale-95 transition-all cursor-pointer">
-          Audit Website
-        </button>
+          {/* Audit Website Button */}
+          <button
+            type="submit"
+            disabled={isAuditing}
+            className="hidden sm:inline-flex shrink-0 items-center gap-2 justify-center rounded-full bg-blue-600 px-5 py-2 text-sm font-bold text-white shadow-sm hover:bg-blue-700 disabled:opacity-60 active:scale-95 transition-all cursor-pointer"
+          >
+            {isAuditing ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin text-white" />
+                <span>Auditing...</span>
+              </>
+            ) : (
+              <span>Audit Website</span>
+            )}
+          </button>
+        </form>
       </div>
 
       {/* Right actions */}
