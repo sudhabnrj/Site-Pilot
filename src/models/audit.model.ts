@@ -27,7 +27,7 @@ export interface IPerformanceDataPoint {
 }
 
 export interface IAuditReport {
-  _id?: string;
+  _id?: any;
   userId: string;
   url: string;
   domain: string;
