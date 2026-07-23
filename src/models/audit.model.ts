@@ -27,6 +27,7 @@ export interface IPerformanceDataPoint {
 }
 
 export interface IAuditReport {
+  _id?: string;
   userId: string;
   url: string;
   domain: string;
@@ -57,7 +58,7 @@ export interface IAuditReport {
   updatedAt?: Date;
 }
 
-export interface IAuditReportDocument extends IAuditReport, Document {}
+export interface IAuditReportDocument extends Omit<IAuditReport, "_id">, Document {}
 
 const AuditReportSchema: Schema<IAuditReportDocument> = new Schema(
   {
