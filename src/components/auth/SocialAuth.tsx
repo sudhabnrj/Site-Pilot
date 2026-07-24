@@ -40,7 +40,7 @@ export function SocialAuth({
         type="button"
         disabled={isLoading}
         onClick={() => handleProviderClick("google")}
-        className="flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-60 disabled:cursor-not-allowed active:scale-95 transition-all duration-200 select-none shadow-sm font-bold text-xs text-slate-700 cursor-pointer"
+        className="flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 disabled:opacity-60 disabled:cursor-not-allowed active:scale-95 transition-all duration-200 select-none shadow-sm font-bold text-xs cursor-pointer"
       >
         {isGoogleLoading ? (
           <Loader2 className="h-5 w-5 animate-spin text-blue-600 shrink-0" />
@@ -72,12 +72,12 @@ export function SocialAuth({
         type="button"
         disabled={isLoading}
         onClick={() => handleProviderClick("github")}
-        className="flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-60 disabled:cursor-not-allowed active:scale-95 transition-all duration-200 select-none shadow-sm font-bold text-xs text-slate-700 cursor-pointer"
+        className="flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 disabled:opacity-60 disabled:cursor-not-allowed active:scale-95 transition-all duration-200 select-none shadow-sm font-bold text-xs cursor-pointer"
       >
         {isGithubLoading ? (
-          <Loader2 className="h-5 w-5 animate-spin text-slate-800 shrink-0" />
+          <Loader2 className="h-5 w-5 animate-spin text-slate-800 dark:text-slate-200 shrink-0" />
         ) : (
-          <svg className="h-5 w-5 shrink-0 fill-slate-900" viewBox="0 0 24 24">
+          <svg className="h-5 w-5 shrink-0 fill-slate-900 dark:fill-white" viewBox="0 0 24 24">
             <path
               fillRule="evenodd"
               clipRule="evenodd"

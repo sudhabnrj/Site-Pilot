@@ -86,13 +86,13 @@ export function Sidebar({ className, isCollapsed = false, onToggle }: SidebarPro
     }
     if (userPlan === "starter") {
       return (
-        <span className="mt-0.5 inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-blue-100 text-blue-700">
+        <span className="mt-0.5 inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-900">
           Starter Plan
         </span>
       );
     }
     return (
-      <span className="mt-0.5 inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-slate-200 text-slate-700">
+      <span className="mt-0.5 inline-flex items-center px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-300 dark:border-slate-700 shadow-xs">
         Free Plan
       </span>
     );

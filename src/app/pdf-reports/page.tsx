@@ -63,6 +63,7 @@ export default function PdfReportsPage() {
         {/* PDF Document Paper Sheet Preview */}
         <div className="w-full overflow-x-auto p-4 flex justify-center">
           <PdfReportPreviewPaper
+            report={currentReport}
             domain={domain}
             overallScore={score}
             date={dateStr}

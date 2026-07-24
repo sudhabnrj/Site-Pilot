@@ -7,51 +7,116 @@ import { PdfVisualPreviewCard } from "./pdf-visual-preview-card";
 import { Brain, Link as LinkIcon } from "lucide-react";
 
 interface PdfReportPreviewPaperProps {
-  domain: string;
-  overallScore: number;
-  date: string;
-  reportId: string;
+  report?: any;
+  domain?: string;
+  overallScore?: number;
+  date?: string;
+  reportId?: string;
 }
 
-const MOCK_RECOMMENDATIONS = [
-  {
-    num: 1,
-    title: "Optimize Largest Contentful Paint (LCP)",
-    description: "Image compression on the homepage banner could reduce load time by 1.2s.",
-    isLowPriority: false,
-  },
-  {
-    num: 2,
-    title: "Improve Mobile Tap Targets",
-    description: "Navigation links in the footer are too close for mobile users (below 48px threshold).",
-    isLowPriority: false,
-  },
-  {
-    num: 3,
-    title: "Fix Broken Inbound Links",
-    description: "The \"About\" page has 3 internal 404 errors impacting SEO crawl depth.",
-    isLowPriority: false,
-  },
-  {
-    num: 4,
-    title: "Implement Schema Markup",
-    description: "Missing BreadcrumbList schema on service pages is limiting rich snippet potential.",
-    isLowPriority: true,
-  },
-  {
-    num: 5,
-    title: "H1 Semantic Structure",
-    description: "Multiple H1 tags detected on the homepage. Condense to a single primary heading.",
-    isLowPriority: true,
-  },
-];
-
 export function PdfReportPreviewPaper({
-  domain = "example.com",
-  overallScore = 85,
-  date = "OCTOBER 24, 2023",
-  reportId = "AA-29402-92X",
+  report,
+  domain: propDomain = "example.com",
+  overallScore: propScore = 85,
+  date: propDate = "TODAY",
+  reportId: propReportId = "AA-29402-92X",
 }: PdfReportPreviewPaperProps) {
+  const domain = report?.domain || propDomain;
+  const overallScore = report?.overallScore ?? propScore;
+  const date = report?.createdAt
+    ? new Date(report.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }).toUpperCase()
+    : propDate;
+  const reportId = report?._id ? `REP-${String(report._id).slice(-8).toUpperCase()}` : propReportId;
+
+  const seoScore = report?.seoScore ?? 80;
+  const securityScore = report?.securityScore ?? 95;
+  const accessibilityScore = report?.accessibilityScore ?? 85;
+  const performanceScore = report?.performanceScore ?? 75;
+
+  // Build complete list of all issues & recommendations
+  const allIssuesList = (() => {
+    const list: Array<{
+      num: number;
+      title: string;
+      description: string;
+      category?: string;
+      severity?: string;
+      isLowPriority?: boolean;
+    }> = [];
+
+    if (report?.issues && Array.isArray(report.issues) && report.issues.length > 0) {
+      report.issues.forEach((iss: any, index: number) => {
+        list.push({
+          num: index + 1,
+          title: iss.issue || iss.title || "Audit Finding",
+          description: iss.recommendation || iss.description || iss.impact || "Review website setup for optimization.",
+          category: iss.category?.toUpperCase() || "AUDIT",
+          severity: iss.severity || "warning",
+          isLowPriority: iss.severity === "info",
+        });
+      });
+    }
+
+    if (report?.recommendations && Array.isArray(report.recommendations) && report.recommendations.length > 0) {
+      report.recommendations.forEach((rec: any) => {
+        const title = rec.title || rec.recommendation || "Optimization Step";
+        const exists = list.some((item) => item.title.toLowerCase() === title.toLowerCase());
+        if (!exists) {
+          list.push({
+            num: list.length + 1,
+            title,
+            description: rec.description || rec.impact || "Implement recommended fix to improve score.",
+            category: rec.category?.toUpperCase() || "AI FIX",
+            severity: rec.priority === "high" ? "critical" : "warning",
+            isLowPriority: rec.priority === "low",
+          });
+        }
+      });
+    }
+
+    // Fallback if no issues recorded
+    if (list.length === 0) {
+      list.push(
+        {
+          num: 1,
+          title: "Optimize Largest Contentful Paint (LCP)",
+          description: `Compress hero background imagery on ${domain} to improve page speed by up to 1.2s.`,
+          category: "PERFORMANCE",
+          severity: "warning",
+          isLowPriority: false,
+        },
+        {
+          num: 2,
+          title: "Improve Mobile Tap Target Sizes",
+          description: "Ensure touch navigation items have at least 48px padding for seamless mobile browsing.",
+          category: "MOBILE",
+          severity: "warning",
+          isLowPriority: false,
+        },
+        {
+          num: 3,
+          title: "Fix Internal Broken Links",
+          description: "Inspect crawler errors and repair 404 links to enhance crawl budget and SEO depth.",
+          category: "SEO",
+          severity: "critical",
+          isLowPriority: false,
+        },
+        {
+          num: 4,
+          title: "Configure Strict Security Headers",
+          description: "Add Content-Security-Policy (CSP) and Strict-Transport-Security (HSTS) response headers.",
+          category: "SECURITY",
+          severity: "info",
+          isLowPriority: true,
+        }
+      );
+    }
+
+    return list;
+  })();
+
+  const securityStanding = securityScore >= 90 ? "A+" : securityScore >= 75 ? "B" : "C";
+
   return (
     <div className="max-w-[816px] mx-auto bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden min-h-[1056px] flex flex-col p-12 hover:shadow-2xl hover:scale-[1.005] transition-all duration-300 select-none">
       {/* Document Header */}
@@ -81,12 +146,12 @@ export function PdfReportPreviewPaper({
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mb-10">
         {/* Health Score Column */}
         <div className="md:col-span-5 flex flex-col justify-center">
-          <PdfHealthScoreWidget score={overallScore} standing="OPTIMIZED" />
+          <PdfHealthScoreWidget score={overallScore} standing={overallScore >= 80 ? "OPTIMIZED" : "NEEDS ATTENTION"} />
         </div>
 
         {/* Breakdown Sub-indices Column */}
         <div className="md:col-span-7 grid grid-cols-2 gap-4 items-stretch">
-          <PdfSeoDonut score={80} />
+          <PdfSeoDonut score={seoScore} />
           
           {/* Security Card */}
           <div className="bg-slate-50 border border-slate-200/60 p-5 rounded-[24px] select-none flex flex-col justify-between">
@@ -95,13 +160,13 @@ export function PdfReportPreviewPaper({
             </p>
             <div className="flex flex-col items-center">
               <span className="font-display text-3xl font-black text-emerald-600 leading-none">
-                A+
+                {securityStanding}
               </span>
               <div className="w-full bg-slate-200 h-1.5 rounded-full mt-3 overflow-hidden shadow-inner">
-                <div className="w-[95%] bg-emerald-500 h-full rounded-full" />
+                <div className="bg-emerald-500 h-full rounded-full transition-all" style={{ width: `${securityScore}%` }} />
               </div>
               <p className="text-[9px] font-bold text-slate-400 mt-2 select-none">
-                Zero vulnerabilities detected
+                {securityScore >= 90 ? "SSL & security headers verified" : "Security enhancements recommended"}
               </p>
             </div>
           </div>
@@ -109,25 +174,25 @@ export function PdfReportPreviewPaper({
           {/* Accessibility Progress Indices */}
           <div className="col-span-2 bg-slate-50 border border-slate-200/60 p-5 rounded-[24px] select-none">
             <p className="text-[10px] font-black text-slate-400 tracking-wider mb-4">
-              ACCESSIBILITY (WCAG 2.1)
+              ACCESSIBILITY (WCAG 2.1) & PERFORMANCE INDEX
             </p>
             <div className="space-y-4">
               <div>
                 <div className="flex justify-between text-[10px] font-bold text-slate-400 mb-1">
-                  <span>Contrast</span>
-                  <span className="text-slate-600">High</span>
+                  <span>Accessibility Score</span>
+                  <span className="text-slate-600">{accessibilityScore}/100</span>
                 </div>
                 <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden shadow-inner">
-                  <div className="w-[88%] bg-blue-600 h-full rounded-full" />
+                  <div className="bg-blue-600 h-full rounded-full transition-all" style={{ width: `${accessibilityScore}%` }} />
                 </div>
               </div>
               <div>
                 <div className="flex justify-between text-[10px] font-bold text-slate-400 mb-1">
-                  <span>Screen Reader Compatibility</span>
-                  <span className="text-slate-600">Medium</span>
+                  <span>Performance Load Speed</span>
+                  <span className="text-slate-600">{performanceScore}/100</span>
                 </div>
                 <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden shadow-inner">
-                  <div className="w-[62%] bg-indigo-600 h-full rounded-full" />
+                  <div className="bg-indigo-600 h-full rounded-full transition-all" style={{ width: `${performanceScore}%` }} />
                 </div>
               </div>
             </div>
@@ -135,39 +200,33 @@ export function PdfReportPreviewPaper({
         </div>
       </div>
 
-      {/* AI Recommendations */}
+      {/* Identified Issues & Recommendations */}
       <section className="mb-10 select-none">
-        <div className="flex items-center gap-2 mb-6 select-none">
-          <Brain className="h-5 w-5 text-indigo-600" />
-          <h2 className="text-sm font-black text-slate-800 uppercase tracking-wider">
-            Top 5 AI Recommendations
-          </h2>
+        <div className="flex items-center justify-between gap-2 mb-6 select-none border-b border-slate-100 pb-3">
+          <div className="flex items-center gap-2">
+            <Brain className="h-5 w-5 text-indigo-600" />
+            <h2 className="text-sm font-black text-slate-800 uppercase tracking-wider">
+              Identified Audit Issues & Recommendations
+            </h2>
+          </div>
+          <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-100">
+            {allIssuesList.length} Total Findings
+          </span>
         </div>
+
         <div className="space-y-3">
-          {MOCK_RECOMMENDATIONS.map((rec) => (
+          {allIssuesList.map((rec) => (
             <PdfAiRecommendationItem key={rec.num} {...rec} />
           ))}
         </div>
       </section>
-
-      {/* Visual latency & security graphs */}
-      <div className="grid grid-cols-2 gap-4 mb-10 select-none">
-        <PdfVisualPreviewCard
-          title="System Latency Heatmap"
-          imageSrc="https://lh3.googleusercontent.com/aida-public/AB6AXuCVmDXAKheArQQ3X6FJnUU4oi8Y6L_y-7-VM7qyFtKtoReLITIs5tJuRlzBFAcyIQArUkgxzIK9KgJdFFJLJpvVy9f9ylKlpv1IHwkPBfu2iMu6F_cq1RsH58BB67wiY4pvIIGtm_ExqSRsyVBsD5eH0QNL2iX9cyIf2i-p_f-5cFlxnw7XWXf-_sdEFy_o-SqSSkpcHRHrU_v136rkTZ0P8OBHUXVMEP6gz6yAx3zMd9hmpqrAuBSDmA"
-        />
-        <PdfVisualPreviewCard
-          title="Security Node Mapping"
-          imageSrc="https://lh3.googleusercontent.com/aida-public/AB6AXuD0a2p3pa8ZC4Qa6_a6-xxwrZCzJLr-zHyzuDfx5SubfRBkLw-JiMtHgacmlQwK04NKj6xd9O696MZTpIkjSONv-O2Vjoia9tRkas_suoaGxDsaD_v7jQjl3pV9ZTa68w6pCphYr0grCyBIyx0JRDKAVmXf_BJNsNUIUK7n-S3fXCX5_epafRSw4myWM9tUpxm9z7E8zx2NnT7cA_rwgvWd-fks3kJFrLsR8d9i8akanWpxEuvPSgg1Qw"
-        />
-      </div>
 
       {/* Footer Info */}
       <footer className="mt-auto pt-8 border-t border-slate-100 flex justify-between items-center text-slate-400 text-xs select-none">
         <div className="flex items-center gap-3">
           <span className="font-display text-sm font-black text-blue-600">Site Pilot</span>
           <div className="h-4 w-px bg-slate-200" />
-          <p className="font-semibold text-[10px]">Enterprise Web Analysis Report</p>
+          <p className="font-semibold text-[10px]">Executive Web Analysis Report</p>
         </div>
         <div className="text-right font-bold text-[10px]">
           <p className="uppercase">Date: {date}</p>
