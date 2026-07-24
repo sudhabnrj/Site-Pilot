@@ -45,11 +45,11 @@ export function Sidebar({ className, isCollapsed = false, onToggle }: SidebarPro
 
   const initials = displayName
     ? displayName
-        .split(" ")
-        .map((n: string) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2)
+      .split(" ")
+      .map((n: string) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2)
     : "GU";
 
   const fullName = displayName;
@@ -101,20 +101,20 @@ export function Sidebar({ className, isCollapsed = false, onToggle }: SidebarPro
   return (
     <aside
       className={cn(
-        "fixed left-0 top-0 z-[60] flex h-screen flex-col border-r border-slate-200 bg-slate-50/80 p-4 transition-all duration-300 ease-in-out md:sticky md:top-0",
+        "fixed left-0 top-0 z-[60] flex h-screen flex-col border-r border-slate-200 bg-slate-50/80 dark:border-slate-800 dark:bg-slate-900/95 p-4 transition-all duration-300 ease-in-out md:sticky md:top-0",
         isCollapsed ? "w-20" : "w-64",
         className
       )}
     >
       {/* Brand & Toggle Header */}
       <div className="mb-8 flex items-center justify-between px-2">
-        <div className="flex items-center gap-3 overflow-hidden">
+        <div className="flex items-center gap-3 ">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 shadow-md">
             <Brain className="h-5 w-5 text-white" aria-hidden="true" />
           </div>
           {!isCollapsed && (
             <div className="flex flex-col items-start">
-              <h1 className="text-md font-black leading-tight tracking-tight text-blue-700">
+              <h1 className="text-md font-black leading-tight tracking-tight text-blue-700 dark:text-blue-400">
                 {BRAND.name}
               </h1>
               {getPlanBadge()}
@@ -126,7 +126,7 @@ export function Sidebar({ className, isCollapsed = false, onToggle }: SidebarPro
         {onToggle && (
           <button
             onClick={onToggle}
-            className="hidden h-6 w-6 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50 hover:text-slate-900 md:flex"
+            className="hidden h-6 w-6 items-center justify-center rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 md:flex absolute top-[20px] -right-[14px]"
             aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             {isCollapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
