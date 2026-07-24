@@ -57,7 +57,7 @@ export function Sidebar({ className, isCollapsed = false, onToggle }: SidebarPro
 
   const userPlan = isAdmin
     ? "admin"
-    : user?.plan || (typeof window !== "undefined" ? (localStorage.getItem("user_plan") as any) : null) || "starter";
+    : user?.plan || (typeof window !== "undefined" ? (localStorage.getItem("user_plan") as any) : null) || "free";
 
   const getPlanBadge = () => {
     if (isAdmin) {
@@ -81,12 +81,22 @@ export function Sidebar({ className, isCollapsed = false, onToggle }: SidebarPro
         </span>
       );
     }
+    if (userPlan === "starter") {
+      return (
+        <span className="mt-0.5 inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-blue-100 text-blue-700">
+          Starter Plan
+        </span>
+      );
+    }
     return (
       <span className="mt-0.5 inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-slate-200 text-slate-700">
-        Starter Plan
+        Free Plan
       </span>
     );
   };
+
+  const gatedRoutes = ["/reports", "/security", "/performance", "/seo", "/mobile", "/pdf-reports"];
+  const isFreeOrStarter = !isAdmin && (userPlan === "free" || userPlan === "starter");
 
   return (
     <aside
@@ -127,7 +137,12 @@ export function Sidebar({ className, isCollapsed = false, onToggle }: SidebarPro
       {/* Navigation list */}
       <nav className="flex-1 space-y-1 overflow-y-auto" aria-label="Sidebar navigation">
         {SIDEBAR_NAV_ITEMS.map((item) => (
-          <NavItem key={item.href} item={item} isCollapsed={isCollapsed} />
+          <NavItem
+            key={item.href}
+            item={item}
+            isCollapsed={isCollapsed}
+            isLocked={isFreeOrStarter && gatedRoutes.includes(item.href)}
+          />
         ))}
 
         <div className="pt-6 mt-6 border-t border-slate-200/60">

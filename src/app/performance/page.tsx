@@ -13,6 +13,8 @@ import { useAppDispatch, useAppSelector } from "@/store";
 import { fetchUserAudits } from "@/store/slices/audit-slice";
 import { toast } from "sonner";
 
+import { PlanGate } from "@/components/auth/plan-gate";
+
 const DEFAULT_METRICS = [
   {
     id: "lcp",
@@ -244,93 +246,95 @@ export default function PerformancePage() {
   };
 
   return (
-    <div className="flex flex-col gap-8 pb-16">
-      {/* Top Header Bar */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2 text-xs font-bold text-blue-600 mb-1">
-            <Globe className="h-3.5 w-3.5" />
-            <span>{currentReport?.domain || "Active Property"}</span>
+    <PlanGate requiredPlan="pro" featureName="Performance Metrics">
+      <div className="flex flex-col gap-8 pb-16">
+        {/* Top Header Bar */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="flex items-center gap-2 text-xs font-bold text-blue-600 mb-1">
+              <Globe className="h-3.5 w-3.5" />
+              <span>{currentReport?.domain || "Active Property"}</span>
+            </div>
+            <h2 className="text-3xl font-black tracking-tight text-slate-900">
+              Performance Metrics
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Real-time Core Web Vitals and load performance analysis from MongoDB Atlas.
+            </p>
           </div>
-          <h2 className="text-3xl font-black tracking-tight text-slate-900">
-            Performance Metrics
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Real-time Core Web Vitals and load performance analysis from MongoDB Atlas.
-          </p>
+
+          {/* Header Action Buttons */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsMonitoring(!isMonitoring)}
+              className={cn(
+                "flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer",
+                isMonitoring
+                  ? "border-emerald-200 bg-emerald-50/80 text-emerald-700 hover:bg-emerald-100/80"
+                  : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+              )}
+            >
+              {isMonitoring ? (
+                <>
+                  <Pause className="h-3.5 w-3.5 text-emerald-600" />
+                  <span>Monitoring Active</span>
+                </>
+              ) : (
+                <>
+                  <Play className="h-3.5 w-3.5 text-slate-500" />
+                  <span>Resume Monitoring</span>
+                </>
+              )}
+            </button>
+
+            <button
+              onClick={handleShare}
+              className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-xs hover:bg-slate-50 active:scale-95 transition-all cursor-pointer"
+            >
+              <Share2 className="h-3.5 w-3.5 text-slate-500" />
+              <span className="hidden sm:inline">Share Report</span>
+            </button>
+
+            <button
+              onClick={handleExportReport}
+              className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-blue-700 active:scale-95 transition-all cursor-pointer"
+            >
+              <Download className="h-3.5 w-3.5" />
+              <span>Export</span>
+            </button>
+          </div>
         </div>
 
-        {/* Header Action Buttons */}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsMonitoring(!isMonitoring)}
-            className={cn(
-              "flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer",
-              isMonitoring
-                ? "border-emerald-200 bg-emerald-50/80 text-emerald-700 hover:bg-emerald-100/80"
-                : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-            )}
-          >
-            {isMonitoring ? (
-              <>
-                <Pause className="h-3.5 w-3.5 text-emerald-600" />
-                <span>Monitoring Active</span>
-              </>
-            ) : (
-              <>
-                <Play className="h-3.5 w-3.5 text-slate-500" />
-                <span>Resume Monitoring</span>
-              </>
-            )}
-          </button>
-
-          <button
-            onClick={handleShare}
-            className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-xs hover:bg-slate-50 active:scale-95 transition-all cursor-pointer"
-          >
-            <Share2 className="h-3.5 w-3.5 text-slate-500" />
-            <span className="hidden sm:inline">Share Report</span>
-          </button>
-
-          <button
-            onClick={handleExportReport}
-            className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-blue-700 active:scale-95 transition-all cursor-pointer"
-          >
-            <Download className="h-3.5 w-3.5" />
-            <span>Export</span>
-          </button>
+        {/* 4 Top KPI Cards */}
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {metrics.map((m) => (
+            <PerformanceMetricCard key={m.id} {...m} />
+          ))}
         </div>
-      </div>
 
-      {/* 4 Top KPI Cards */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {metrics.map((m) => (
-          <PerformanceMetricCard key={m.id} {...m} />
-        ))}
-      </div>
+        {/* Chart & Bottlenecks Section */}
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            <PerformanceChart data={chartData} config={CHART_CONFIG} />
+          </div>
+          <div>
+            <PerformanceBottlenecks issues={bottlenecks} />
+          </div>
+        </div>
 
-      {/* Chart & Bottlenecks Section */}
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <PerformanceChart data={chartData} config={CHART_CONFIG} />
-        </div>
-        <div>
-          <PerformanceBottlenecks issues={bottlenecks} />
-        </div>
-      </div>
-
-      {/* Insights & Health Section */}
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <AiPerformanceInsights insights={DEFAULT_INSIGHTS} />
-        </div>
-        <div>
-          <GlobalResponseHealth
-            score={`${currentReport?.overallScore || 98}%`}
-            label="Reliability Score"
-          />
+        {/* Insights & Health Section */}
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            <AiPerformanceInsights insights={DEFAULT_INSIGHTS} />
+          </div>
+          <div>
+            <GlobalResponseHealth
+              score={`${currentReport?.overallScore || 98}%`}
+              label="Reliability Score"
+            />
+          </div>
         </div>
       </div>
-    </div>
+    </PlanGate>
   );
 }

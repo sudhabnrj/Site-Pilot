@@ -25,16 +25,31 @@ export default function UpgradePage() {
 
   const plans: Plan[] = [
     {
+      id: "free",
+      name: "Free",
+      price: "$0",
+      period: "/forever",
+      description: "Basic health scan for single website owners.",
+      features: [
+        "Audit 1 website",
+        "Basic health metrics",
+        "Standard dashboard",
+        "Community support",
+      ],
+      icon: Globe,
+      colorClass: "from-slate-500 to-slate-600",
+    },
+    {
       id: "starter",
       name: "Starter",
       price: billingPeriod === "monthly" ? "$19" : "$15",
       period: "/month",
-      description: "Essential diagnostics for single site owners.",
+      description: "Essential diagnostics for small site owners.",
       features: [
         "Audit up to 3 websites",
         "Weekly automated scans",
-        "Basic SEO & Performance metrics",
-        "AI Chat Assistant limits (10 msgs/day)",
+        "Basic performance overview",
+        "AI Chat limits (10 msgs/day)",
         "Email notifications",
       ],
       icon: Shield,
@@ -49,9 +64,9 @@ export default function UpgradePage() {
       features: [
         "Audit up to 15 websites",
         "Daily automated scans",
-        "Full SEO, Speed & Security reports",
+        "Full SEO, Security & Speed reports",
         "Unlimited AI Chat Assistant queries",
-        "CSV & PDF Report Exporting",
+        "CSV & Executive PDF Exporting",
         "Step-by-step AI remediation guide",
       ],
       icon: Zap,
@@ -66,7 +81,7 @@ export default function UpgradePage() {
       period: "/month",
       description: "Scale monitoring with dedicated agent execution.",
       features: [
-        "Unlimited website properties",
+        "Audit unlimited websites",
         "Real-time monitoring intervals",
         "Custom CSV/PDF branding templates",
         "Priority AI processing queue",
@@ -121,7 +136,7 @@ export default function UpgradePage() {
       </div>
 
       {/* Pricing Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch max-w-6xl mx-auto w-full px-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch max-w-7xl mx-auto w-full px-4">
         {plans.map((plan) => {
           const PlanIcon = plan.icon;
           return (

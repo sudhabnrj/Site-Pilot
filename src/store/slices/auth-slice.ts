@@ -7,7 +7,7 @@ export interface AuthUser {
   email: string;
   role: "admin" | "user";
   status: "active" | "inactive";
-  plan?: "starter" | "pro" | "enterprise";
+  plan?: "free" | "starter" | "pro" | "enterprise";
   isEmailVerified?: boolean;
   profileImage?: string;
   lastLogin?: string | null;
@@ -40,7 +40,7 @@ export const authSlice = createSlice({
       state.isInitialized = true;
       state.error = null;
     },
-    updateUserPlan: (state, action: PayloadAction<"starter" | "pro" | "enterprise">) => {
+    updateUserPlan: (state, action: PayloadAction<"free" | "starter" | "pro" | "enterprise">) => {
       if (state.user) {
         state.user.plan = action.payload;
       }

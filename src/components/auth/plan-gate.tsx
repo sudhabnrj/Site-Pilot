@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Lock, Sparkles } from "lucide-react";
 
 interface PlanGateProps {
-  requiredPlan: "pro" | "enterprise";
+  requiredPlan: "starter" | "pro" | "enterprise";
   children: React.ReactNode;
   featureName?: string;
   fallbackMode?: "mask" | "hide" | "disable";
@@ -26,13 +26,14 @@ export function PlanGate({
     : user?.plan || (typeof window !== "undefined" ? (localStorage.getItem("user_plan") as any) : null) || "starter";
 
   const planRanks: Record<string, number> = {
+    free: 0,
     starter: 1,
     pro: 2,
     enterprise: 3,
     admin: 99,
   };
 
-  const hasAccess = isAdmin || (planRanks[userPlan] || 1) >= (planRanks[requiredPlan] || 2);
+  const hasAccess = isAdmin || (planRanks[userPlan] ?? 1) >= (planRanks[requiredPlan] ?? 2);
 
   if (hasAccess) {
     return <>{children}</>;

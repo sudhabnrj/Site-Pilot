@@ -64,6 +64,13 @@ export function Header({ onMobileMenuToggle, className }: HeaderProps) {
     }
   };
 
+  const isAdmin = user?.role === "admin";
+  const userPlan = isAdmin
+    ? "enterprise"
+    : user?.plan || (typeof window !== "undefined" ? (localStorage.getItem("user_plan") as any) : null) || "free";
+
+  const maxSites = isAdmin ? 999 : userPlan === "enterprise" ? 999 : userPlan === "pro" ? 15 : userPlan === "starter" ? 3 : 1;
+
   const handleAuditSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const cleanUrl = auditUrl.trim();
@@ -71,6 +78,18 @@ export function Header({ onMobileMenuToggle, className }: HeaderProps) {
       toast.error("Please enter a website URL", {
         description: "Example: https://example.com",
       });
+      return;
+    }
+
+    const cleanDomain = cleanUrl.replace(/^(https?:\/\/)?(www\.)?/, "").split("/")[0].toLowerCase();
+    const existingDomains = Array.from(new Set(reportsHistory.map((r) => (r.domain || r.url).replace(/^(https?:\/\/)?(www\.)?/, "").split("/")[0].toLowerCase())));
+    const isExistingSite = existingDomains.includes(cleanDomain);
+
+    if (!isAdmin && !isExistingSite && existingDomains.length >= maxSites) {
+      toast.error(`Website Limit Reached (${existingDomains.length}/${maxSites})`, {
+        description: `Your ${userPlan.toUpperCase()} plan allows auditing up to ${maxSites} site(s). Upgrade your plan to audit more properties!`,
+      });
+      router.push("/upgrade");
       return;
     }
 

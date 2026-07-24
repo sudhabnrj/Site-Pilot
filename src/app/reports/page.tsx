@@ -10,6 +10,8 @@ import { useAppDispatch, useAppSelector } from "@/store";
 import { fetchUserAudits, setCurrentReport, deleteAuditReport, executeAudit } from "@/store/slices/audit-slice";
 import { toast } from "sonner";
 
+import { PlanGate } from "@/components/auth/plan-gate";
+
 const INITIAL_REPORTS: ScanReport[] = [
   {
     id: "rep-1",
@@ -29,6 +31,12 @@ export default function ReportsPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { reportsHistory } = useAppSelector((state) => state.audit);
+  const user = useAppSelector((state) => state.auth.user);
+  const isAdmin = user?.role === "admin";
+  const userPlan = isAdmin
+    ? "enterprise"
+    : user?.plan || (typeof window !== "undefined" ? (localStorage.getItem("user_plan") as any) : null) || "free";
+  const maxSites = isAdmin ? 999 : userPlan === "enterprise" ? 999 : userPlan === "pro" ? 15 : userPlan === "starter" ? 3 : 1;
 
   const [selectedWebsite, setSelectedWebsite] = useState("All Websites");
   const [currentPage, setCurrentPage] = useState(1);
@@ -145,6 +153,14 @@ export default function ReportsPage() {
   };
 
   const handleNewReport = async () => {
+    if (!isAdmin && uniqueWebsites.length >= maxSites) {
+      toast.error(`Website Limit Reached (${uniqueWebsites.length}/${maxSites})`, {
+        description: `Your ${userPlan.toUpperCase()} plan allows auditing up to ${maxSites} site(s). Upgrade your plan to add more properties!`,
+      });
+      router.push("/upgrade");
+      return;
+    }
+
     const targetUrl = prompt("Enter website URL to audit:", "https://example.com");
     if (!targetUrl || !targetUrl.trim()) return;
 
@@ -161,73 +177,75 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="flex flex-col gap-8 pb-16">
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div>
-          <h2 className="text-3xl font-black tracking-tight text-slate-900">
-            Scan Reports History
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Review and manage your historical website audit data.
-          </p>
+    <PlanGate requiredPlan="pro" featureName="Scan Reports History">
+      <div className="flex flex-col gap-8 pb-16">
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div>
+            <h2 className="text-3xl font-black tracking-tight text-slate-900">
+              Scan Reports History
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Review and manage your historical website audit data.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleExportCsv}
+              className="flex items-center gap-1.5 border border-slate-200 bg-white px-4 py-2.5 rounded-full text-xs font-bold text-slate-700 transition-all hover:bg-slate-50 active:scale-95 shadow-sm cursor-pointer"
+            >
+              <FileSpreadsheet className="h-4 w-4 text-slate-400" />
+              Export CSV
+            </button>
+            <button
+              onClick={handleNewReport}
+              className="flex items-center gap-1.5 bg-blue-600 text-white px-5 py-2.5 rounded-full text-xs font-bold shadow-md hover:bg-blue-700 active:scale-95 transition-all cursor-pointer"
+            >
+              <Plus className="h-4 w-4" />
+              New Report
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleExportCsv}
-            className="flex items-center gap-1.5 border border-slate-200 bg-white px-4 py-2.5 rounded-full text-xs font-bold text-slate-700 transition-all hover:bg-slate-50 active:scale-95 shadow-sm"
-          >
-            <FileSpreadsheet className="h-4 w-4 text-slate-400" />
-            Export CSV
-          </button>
-          <button
-            onClick={handleNewReport}
-            className="flex items-center gap-1.5 bg-blue-600 text-white px-5 py-2.5 rounded-full text-xs font-bold shadow-md hover:bg-blue-700 active:scale-95 transition-all"
-          >
-            <Plus className="h-4 w-4" />
-            New Report
-          </button>
+
+        {/* Filters and Bento Mini Stats */}
+        <div className="grid grid-cols-12 gap-6 items-stretch">
+          {/* Filters Panel */}
+          <div className="col-span-12 lg:col-span-8">
+            <ReportsFilters
+              websites={uniqueWebsites}
+              onApplyFilters={handleApplyFilters}
+            />
+          </div>
+
+          {/* Bento Stats */}
+          <div className="col-span-12 lg:col-span-4 grid grid-cols-2 gap-4">
+            <ReportStatsCard
+              icon={History}
+              title="Total Scans"
+              value={`${reports.length} Runs`}
+              iconColorClass="text-blue-600"
+              iconBgClass="bg-blue-50/70 border-blue-100/50"
+            />
+            <ReportStatsCard
+              icon={TrendingUp}
+              title="Avg Score"
+              value="88/100"
+              iconColorClass="text-indigo-600"
+              iconBgClass="bg-indigo-50/70 border-indigo-100/50"
+            />
+          </div>
         </div>
+
+        {/* Reports Data Table */}
+        <ReportsTable
+          reports={paginatedReports}
+          totalResults={filteredReports.length}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onDownloadPdf={handleDownloadPdf}
+        />
       </div>
-
-      {/* Filters and Bento Mini Stats */}
-      <div className="grid grid-cols-12 gap-6 items-stretch">
-        {/* Filters Panel */}
-        <div className="col-span-12 lg:col-span-8">
-          <ReportsFilters
-            websites={uniqueWebsites}
-            onApplyFilters={handleApplyFilters}
-          />
-        </div>
-
-        {/* Bento Stats */}
-        <div className="col-span-12 lg:col-span-4 grid grid-cols-2 gap-4">
-          <ReportStatsCard
-            icon={History}
-            title="Total Scans"
-            value={`${reports.length} Runs`}
-            iconColorClass="text-blue-600"
-            iconBgClass="bg-blue-50/70 border-blue-100/50"
-          />
-          <ReportStatsCard
-            icon={TrendingUp}
-            title="Avg Score"
-            value="88/100"
-            iconColorClass="text-indigo-600"
-            iconBgClass="bg-indigo-50/70 border-indigo-100/50"
-          />
-        </div>
-      </div>
-
-      {/* Reports Data Table */}
-      <ReportsTable
-        reports={paginatedReports}
-        totalResults={filteredReports.length}
-        currentPage={currentPage}
-        pageSize={pageSize}
-        onPageChange={setCurrentPage}
-        onDownloadPdf={handleDownloadPdf}
-      />
-    </div>
+    </PlanGate>
   );
 }

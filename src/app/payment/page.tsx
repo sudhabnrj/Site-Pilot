@@ -26,6 +26,7 @@ function PaymentContent() {
 
   // Map chosen plan details
   const planInfo = {
+    free: { name: "Free Tier Plan", price: 0 },
     starter: { name: "Starter Tier Plan", price: billing === "monthly" ? 19 : 15 },
     pro: { name: "Professional Tier Plan", price: billing === "monthly" ? 49 : 39 },
     enterprise: { name: "Enterprise Tier Plan", price: billing === "monthly" ? 99 : 79 },
