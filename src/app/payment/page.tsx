@@ -94,6 +94,40 @@ function PaymentContent() {
     dispatch(updateUserPlan(planId as any));
     if (typeof window !== "undefined") {
       localStorage.setItem("user_plan", planId);
+
+      // Store Payment Card Info
+      const last4 = cardNumber.replace(/\s/g, "").slice(-4) || "4242";
+      const paymentDetails = {
+        nameOnCard: nameOnCard.trim(),
+        last4: last4,
+        expiry: expiry,
+        brand: "VISA",
+        updatedAt: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+      };
+      localStorage.setItem("payment_method", JSON.stringify(paymentDetails));
+
+      // Store Dynamic Invoice Record
+      const newInvoice = {
+        id: `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+        date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+        amount: `$${totalAmount.toFixed(2)}`,
+        plan: `${planInfo.name} (${billing === "monthly" ? "Monthly" : "Annually"})`,
+        status: "Paid",
+      };
+      const existingInvoices = JSON.parse(localStorage.getItem("user_invoices") || "[]");
+      localStorage.setItem("user_invoices", JSON.stringify([newInvoice, ...existingInvoices]));
+
+      // Store Notification Event
+      const newNotif = {
+        id: `notif-${Date.now()}`,
+        title: `Plan Upgraded to ${planId.toUpperCase()}`,
+        description: `Successfully upgraded account subscription to ${planInfo.name}.`,
+        time: "Just now",
+        read: false,
+        type: "success",
+      };
+      const existingNotifs = JSON.parse(localStorage.getItem("user_notifications") || "[]");
+      localStorage.setItem("user_notifications", JSON.stringify([newNotif, ...existingNotifs]));
     }
 
     toast.success("Payment Authorized!", {
@@ -102,7 +136,7 @@ function PaymentContent() {
 
     // Hold success message before redirect
     await new Promise((resolve) => setTimeout(resolve, 1500));
-    router.push("/");
+    router.push("/billing");
   };
 
   return (

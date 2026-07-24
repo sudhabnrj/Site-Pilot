@@ -31,7 +31,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
   }
 
   return (
-    <div className="grid min-h-screen bg-slate-50/50 md:grid-cols-[auto_1fr] transition-all duration-300 ease-in-out">
+    <div className="grid min-h-screen bg-slate-50/50 dark:bg-[#090d16] text-slate-900 dark:text-slate-100 md:grid-cols-[auto_1fr] transition-colors duration-300 ease-in-out">
       {/* Desktop Sidebar (Collapsible, Sticky) */}
       <Sidebar
         isCollapsed={isSidebarCollapsed}

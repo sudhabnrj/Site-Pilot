@@ -1,5 +1,19 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+html.dark,
+.dark {
+  color-scheme: dark;
+  background-color: #090d16;
+  color: #f8fafc;
+}
+
+.dark body {
+  background-color: #090d16;
+  color: #f8fafc;
+}
+
 @theme {
   /* ===== Design System Colors (Lumina SaaS - from Stitch) ===== */
 

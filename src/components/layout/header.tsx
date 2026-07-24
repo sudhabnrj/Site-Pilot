@@ -151,6 +151,26 @@ export function Header({ onMobileMenuToggle, className }: HeaderProps) {
     }
   };
 
+  // Sync notifications with localStorage on mount & focus
+  useEffect(() => {
+    const loadStoredNotifications = () => {
+      if (typeof window !== "undefined") {
+        const stored = localStorage.getItem("user_notifications");
+        if (stored) {
+          try {
+            setNotifications(JSON.parse(stored));
+          } catch {
+            // Keep default
+          }
+        }
+      }
+    };
+
+    loadStoredNotifications();
+    window.addEventListener("focus", loadStoredNotifications);
+    return () => window.removeEventListener("focus", loadStoredNotifications);
+  }, []);
+
   const isAdmin = user?.role === "admin";
   const userPlan = isAdmin
     ? "enterprise"
@@ -185,6 +205,24 @@ export function Header({ onMobileMenuToggle, className }: HeaderProps) {
       toast.success("Audit Completed!", {
         description: `Successfully analyzed ${cleanUrl}`,
       });
+
+      // Prepend dynamic audit notification
+      const auditNotif: HeaderNotification = {
+        id: `notif-audit-${Date.now()}`,
+        title: `Audit Completed`,
+        description: `Successfully analyzed health & security metrics for ${cleanDomain}.`,
+        time: "Just now",
+        read: false,
+        type: "success",
+      };
+      setNotifications((prev) => {
+        const updated = [auditNotif, ...prev];
+        if (typeof window !== "undefined") {
+          localStorage.setItem("user_notifications", JSON.stringify(updated));
+        }
+        return updated;
+      });
+
       setSelectedWebsite(newReport.url || cleanUrl);
       setAuditUrl(newReport.url || cleanUrl);
       router.push("/");
@@ -216,19 +254,32 @@ export function Header({ onMobileMenuToggle, className }: HeaderProps) {
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   const markAllNotificationsAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    setNotifications((prev) => {
+      const updated = prev.map((n) => ({ ...n, read: true }));
+      if (typeof window !== "undefined") {
+        localStorage.setItem("user_notifications", JSON.stringify(updated));
+      }
+      return updated;
+    });
     toast.success("All notifications marked as read");
   };
 
   const clearAllNotifications = () => {
     setNotifications([]);
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("user_notifications");
+    }
     toast.info("Notifications cleared");
   };
 
   const toggleNotificationRead = (id: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
-    );
+    setNotifications((prev) => {
+      const updated = prev.map((n) => (n.id === id ? { ...n, read: true } : n));
+      if (typeof window !== "undefined") {
+        localStorage.setItem("user_notifications", JSON.stringify(updated));
+      }
+      return updated;
+    });
   };
 
   const displayName = user

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { GlassCard } from "@/components/ui/glass-card";
 import {
@@ -27,29 +27,13 @@ interface Invoice {
   status: "Paid" | "Pending" | "Failed";
 }
 
-const INVOICES_HISTORY: Invoice[] = [
-  {
-    id: "INV-2026-0701",
-    date: "Jul 24, 2026",
-    amount: "$19.00",
-    plan: "Starter Plan (Monthly)",
-    status: "Paid",
-  },
-  {
-    id: "INV-2026-0601",
-    date: "Jun 24, 2026",
-    amount: "$19.00",
-    plan: "Starter Plan (Monthly)",
-    status: "Paid",
-  },
-  {
-    id: "INV-2026-0501",
-    date: "May 24, 2026",
-    amount: "$19.00",
-    plan: "Starter Plan (Monthly)",
-    status: "Paid",
-  },
-];
+interface PaymentMethodInfo {
+  nameOnCard: string;
+  last4: string;
+  expiry: string;
+  brand: string;
+  updatedAt?: string;
+}
 
 export default function BillingPage() {
   const router = useRouter();
@@ -64,7 +48,8 @@ export default function BillingPage() {
   const maxSites = isAdmin ? 999 : userPlan === "enterprise" ? 999 : userPlan === "pro" ? 15 : userPlan === "starter" ? 3 : 1;
   const sitesCount = reportsHistory.length;
 
-  const [invoices] = useState<Invoice[]>(INVOICES_HISTORY);
+  const [savedCard, setSavedCard] = useState<PaymentMethodInfo | null>(null);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
 
   const planPriceMap: Record<string, string> = {
     free: "$0 / month",
@@ -72,6 +57,42 @@ export default function BillingPage() {
     pro: "$49 / month",
     enterprise: "$99 / month",
   };
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const rawCard = localStorage.getItem("payment_method");
+      if (rawCard) {
+        try {
+          setSavedCard(JSON.parse(rawCard));
+        } catch {
+          setSavedCard(null);
+        }
+      }
+
+      const rawInvoices = localStorage.getItem("user_invoices");
+      if (rawInvoices) {
+        try {
+          setInvoices(JSON.parse(rawInvoices));
+        } catch {
+          setInvoices([]);
+        }
+      } else {
+        if (userPlan !== "free") {
+          setInvoices([
+            {
+              id: "INV-2026-0701",
+              date: "Jul 24, 2026",
+              amount: planPriceMap[userPlan] || "$19.00",
+              plan: `${userPlan.toUpperCase()} Plan (Monthly)`,
+              status: "Paid",
+            },
+          ]);
+        } else {
+          setInvoices([]);
+        }
+      }
+    }
+  }, [userPlan]);
 
   const handleDownloadReceipt = (invoice: Invoice) => {
     toast.info(`Downloading Receipt ${invoice.id}`, {
@@ -101,12 +122,6 @@ Thank you for using Site Pilot!
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-  };
-
-  const handleUpdatePaymentMethod = () => {
-    toast.success("Update Payment Method", {
-      description: "Payment details update modal initialized.",
-    });
   };
 
   return (
@@ -213,7 +228,7 @@ Thank you for using Site Pilot!
           </GlassCard>
         </div>
 
-        {/* Payment Method Card */}
+        {/* Dynamic Payment Method Card */}
         <div className="lg:col-span-5 flex flex-col">
           <GlassCard className="p-6 md:p-8 rounded-[28px] border-slate-200/80 dark:border-slate-800 shadow-md bg-white/80 dark:bg-slate-900/80 h-full flex flex-col justify-between space-y-6">
             <div className="space-y-4">
@@ -231,44 +246,52 @@ Thank you for using Site Pilot!
                 </div>
               </div>
 
-              {/* Card visual mockup */}
-              <div className="p-5 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 text-white shadow-lg space-y-4 relative overflow-hidden">
-                <div className="absolute right-3 top-3 opacity-10">
-                  <CreditCard className="h-24 w-24" />
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-xs font-black uppercase tracking-widest text-slate-400">
-                    VISA CARD
-                  </span>
-                  <ShieldCheck className="h-5 w-5 text-emerald-400" />
-                </div>
-                <p className="text-lg font-mono tracking-widest font-bold">
-                  •••• •••• •••• 4242
-                </p>
-                <div className="flex justify-between items-end text-[10px] font-semibold text-slate-300">
-                  <div>
-                    <p className="text-[8px] uppercase tracking-wider text-slate-400">Cardholder</p>
-                    <p className="font-bold text-white text-xs">{user?.firstName ? `${user.firstName} ${user.lastName}` : "Sudha Banerjee"}</p>
+              {savedCard ? (
+                /* Card visual mockup displaying actual user entered details */
+                <div className="p-5 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 text-white shadow-lg space-y-4 relative overflow-hidden">
+                  <div className="absolute right-3 top-3 opacity-10">
+                    <CreditCard className="h-24 w-24" />
                   </div>
-                  <div>
-                    <p className="text-[8px] uppercase tracking-wider text-slate-400">Expires</p>
-                    <p className="font-bold text-white text-xs">12 / 28</p>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-black uppercase tracking-widest text-slate-400">
+                      {savedCard.brand || "VISA CARD"}
+                    </span>
+                    <ShieldCheck className="h-5 w-5 text-emerald-400" />
+                  </div>
+                  <p className="text-lg font-mono tracking-widest font-bold">
+                    •••• •••• •••• {savedCard.last4}
+                  </p>
+                  <div className="flex justify-between items-end text-[10px] font-semibold text-slate-300">
+                    <div>
+                      <p className="text-[8px] uppercase tracking-wider text-slate-400">Cardholder</p>
+                      <p className="font-bold text-white text-xs">{savedCard.nameOnCard}</p>
+                    </div>
+                    <div>
+                      <p className="text-[8px] uppercase tracking-wider text-slate-400">Expires</p>
+                      <p className="font-bold text-white text-xs">{savedCard.expiry}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                /* Free Plan / No card on file state */
+                <div className="p-6 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-center space-y-3">
+                  <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto border border-emerald-100 dark:border-emerald-900">
+                    <CheckCircle2 className="h-5 w-5" />
+                  </div>
+                  <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                    No Payment Method Required
+                  </h4>
+                  <p className="text-[11px] text-slate-400 max-w-xs mx-auto leading-relaxed">
+                    You are currently using the Free Plan ($0/forever). No credit card authorization is required unless you choose a paid plan.
+                  </p>
+                </div>
+              )}
             </div>
-
-            <button
-              onClick={handleUpdatePaymentMethod}
-              className="w-full py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 transition-all cursor-pointer shadow-sm"
-            >
-              Update Payment Method
-            </button>
           </GlassCard>
         </div>
       </div>
 
-      {/* Invoices & Billing History */}
+      {/* Dynamic Invoices & Billing History */}
       <GlassCard className="p-6 md:p-8 rounded-[28px] border-slate-200/80 dark:border-slate-800 shadow-md bg-white/80 dark:bg-slate-900/80 space-y-6">
         <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-3">
@@ -284,53 +307,64 @@ Thank you for using Site Pilot!
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-slate-100 dark:border-slate-800">
-                <th className="pb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-4">Invoice</th>
-                <th className="pb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Date</th>
-                <th className="pb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Description</th>
-                <th className="pb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Amount</th>
-                <th className="pb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status</th>
-                <th className="pb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider pr-4 text-right">Receipt</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-              {invoices.map((inv) => (
-                <tr key={inv.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors">
-                  <td className="py-4 font-mono font-bold text-xs text-slate-800 dark:text-slate-200 pl-4">
-                    {inv.id}
-                  </td>
-                  <td className="py-4 text-xs font-semibold text-slate-600 dark:text-slate-400">
-                    {inv.date}
-                  </td>
-                  <td className="py-4 text-xs font-semibold text-slate-800 dark:text-slate-200">
-                    {inv.plan}
-                  </td>
-                  <td className="py-4 text-xs font-black text-slate-900 dark:text-white">
-                    {inv.amount}
-                  </td>
-                  <td className="py-4">
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-50 text-emerald-600 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900">
-                      <CheckCircle2 className="h-3 w-3" />
-                      {inv.status}
-                    </span>
-                  </td>
-                  <td className="py-4 text-right pr-4">
-                    <button
-                      onClick={() => handleDownloadReceipt(inv)}
-                      className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
-                    >
-                      <Download className="h-3.5 w-3.5" />
-                      <span>Download</span>
-                    </button>
-                  </td>
+        {invoices.length === 0 ? (
+          <div className="p-8 text-center bg-slate-50/50 dark:bg-slate-950/50 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 space-y-2">
+            <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
+              No Paid Statements
+            </p>
+            <p className="text-[11px] text-slate-400 max-w-md mx-auto">
+              Your account is on the Free Plan ($0.00/month). Billing receipts are automatically generated when you subscribe to a paid tier.
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-slate-100 dark:border-slate-800">
+                  <th className="pb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-4">Invoice</th>
+                  <th className="pb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Date</th>
+                  <th className="pb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Description</th>
+                  <th className="pb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Amount</th>
+                  <th className="pb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status</th>
+                  <th className="pb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider pr-4 text-right">Receipt</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                {invoices.map((inv) => (
+                  <tr key={inv.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors">
+                    <td className="py-4 font-mono font-bold text-xs text-slate-800 dark:text-slate-200 pl-4">
+                      {inv.id}
+                    </td>
+                    <td className="py-4 text-xs font-semibold text-slate-600 dark:text-slate-400">
+                      {inv.date}
+                    </td>
+                    <td className="py-4 text-xs font-semibold text-slate-800 dark:text-slate-200">
+                      {inv.plan}
+                    </td>
+                    <td className="py-4 text-xs font-black text-slate-900 dark:text-white">
+                      {inv.amount}
+                    </td>
+                    <td className="py-4">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-50 text-emerald-600 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900">
+                        <CheckCircle2 className="h-3 w-3" />
+                        {inv.status}
+                      </span>
+                    </td>
+                    <td className="py-4 text-right pr-4">
+                      <button
+                        onClick={() => handleDownloadReceipt(inv)}
+                        className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        <span>Download</span>
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </GlassCard>
     </div>
   );
