@@ -8,7 +8,7 @@ import { UserAvatarImage } from "@/components/ui/user-avatar-image";
 import {
   Users, Search, Filter, ChevronRight, Shield, RefreshCw,
   TrendingUp, UserCheck, CreditCard, Calendar, Activity,
-  Globe, Loader2, AlertTriangle
+  Globe, Loader2, AlertTriangle, Trash2
 } from "lucide-react";
 
 interface UserRecord {
@@ -64,11 +64,6 @@ function formatDate(date?: string) {
   return new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
-function ScoreBadge({ score }: { score: number }) {
-  const color = score >= 80 ? "text-emerald-600" : score >= 60 ? "text-amber-500" : "text-red-500";
-  return <span className={`font-black text-sm ${color}`}>{score}</span>;
-}
-
 export default function AdminUsersPage() {
   const router = useRouter();
   const authUser = useAppSelector((state) => state.auth.user);
@@ -84,6 +79,11 @@ export default function AdminUsersPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+
+  // Delete state
+  const [userToDelete, setUserToDelete] = useState<UserRecord | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
@@ -125,6 +125,38 @@ export default function AdminUsersPage() {
     setPage(1);
   }, [search, planFilter, statusFilter]);
 
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
+    setIsDeleting(true);
+    setDeleteError("");
+    try {
+      const res = await fetch(`/api/admin/users/${userToDelete._id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (data.success) {
+        const deletedId = userToDelete._id;
+        setUsers((prev) => prev.filter((u) => u._id !== deletedId));
+        setTotalCount((prev) => Math.max(0, prev - 1));
+        setStats((prev) => ({
+          ...prev,
+          totalUsers: Math.max(0, prev.totalUsers - 1),
+          activeUsers: userToDelete.status === "active" ? Math.max(0, prev.activeUsers - 1) : prev.activeUsers,
+          paidUsers: ["starter", "pro", "enterprise"].includes(userToDelete.plan?.toLowerCase())
+            ? Math.max(0, prev.paidUsers - 1)
+            : prev.paidUsers,
+        }));
+        setUserToDelete(null);
+      } else {
+        setDeleteError(data.message || "Failed to delete user.");
+      }
+    } catch {
+      setDeleteError("Network error while deleting user.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (!isAdmin) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -135,6 +167,14 @@ export default function AdminUsersPage() {
       </div>
     );
   }
+
+  // Filter out currently logged in admin user as safeguard
+  const displayUsers = users.filter(
+    (u) =>
+      u._id !== authUser?.id &&
+      u._id !== (authUser as any)?._id &&
+      u.email.toLowerCase() !== authUser?.email.toLowerCase()
+  );
 
   return (
     <div className="flex flex-col gap-8 pb-16">
@@ -259,7 +299,7 @@ export default function AdminUsersPage() {
               Try Again
             </button>
           </div>
-        ) : users.length === 0 ? (
+        ) : displayUsers.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-20 text-center px-6">
             <Users className="h-12 w-12 text-slate-300 dark:text-slate-700" />
             <p className="font-bold text-slate-600 dark:text-slate-400">No users match your filters.</p>
@@ -277,11 +317,11 @@ export default function AdminUsersPage() {
                   <th className="text-left text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 px-4 py-3">Joined</th>
                   <th className="text-left text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 px-4 py-3">Last Login</th>
                   <th className="text-left text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 px-4 py-3">Audits</th>
-                  <th className="text-left text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 px-4 py-3"></th>
+                  <th className="text-right text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 px-6 py-3">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {users.map((user) => (
+                {displayUsers.map((user) => (
                   <tr
                     key={user._id}
                     className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors group cursor-pointer"
@@ -341,8 +381,21 @@ export default function AdminUsersPage() {
                       </div>
                     </td>
                     {/* Action */}
-                    <td className="px-4 py-4">
-                      <ChevronRight className="h-4 w-4 text-slate-300 dark:text-slate-600 group-hover:text-blue-500 transition-colors" />
+                    <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setUserToDelete(user);
+                            setDeleteError("");
+                          }}
+                          className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/50 text-slate-400 hover:text-red-600 transition-colors cursor-pointer"
+                          title="Delete User Permanently"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                        <ChevronRight className="h-4 w-4 text-slate-300 dark:text-slate-600 group-hover:text-blue-500 transition-colors" />
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -351,6 +404,69 @@ export default function AdminUsersPage() {
           </div>
         )}
       </GlassCard>
+
+      {/* Delete Confirmation Modal */}
+      {userToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/80 border border-red-200 dark:border-red-900 text-red-600 dark:text-red-400">
+                <AlertTriangle className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-slate-900 dark:text-white">Delete User Permanently</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">This action cannot be undone.</p>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-xs space-y-1">
+              <p className="font-bold text-slate-800 dark:text-slate-200">
+                {getDisplayName(userToDelete)}
+              </p>
+              <p className="text-slate-500 dark:text-slate-400">{userToDelete.email}</p>
+              <p className="text-[11px] text-red-600 dark:text-red-400 pt-2 font-semibold">
+                Deleting will permanently erase this user account and all associated audit reports from the database.
+              </p>
+            </div>
+
+            {deleteError && (
+              <p className="text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/60 p-3 rounded-xl border border-red-200 dark:border-red-900">
+                {deleteError}
+              </p>
+            )}
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                disabled={isDeleting}
+                onClick={() => {
+                  setUserToDelete(null);
+                  setDeleteError("");
+                }}
+                className="px-4 py-2.5 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 cursor-pointer disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={isDeleting}
+                onClick={handleDeleteUser}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-red-600 text-white hover:bg-red-700 cursor-pointer shadow-lg shadow-red-500/20 disabled:opacity-50"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4" />
+                    Permanently Delete
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

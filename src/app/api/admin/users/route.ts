@@ -7,23 +7,23 @@ import { verifyAccessToken, verifyRefreshToken } from "@/lib/auth/jwt";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
-async function verifyAdmin(): Promise<{ ok: boolean; userId?: string }> {
+async function verifyAdmin(): Promise<{ ok: boolean; userId?: string; email?: string }> {
   try {
     const accessToken = await getAccessTokenFromCookies();
     if (accessToken) {
       const payload = verifyAccessToken(accessToken);
-      if (payload?.role === "admin") return { ok: true, userId: payload.userId };
+      if (payload?.role === "admin") return { ok: true, userId: payload.userId, email: payload.email };
     }
 
     const refreshToken = await getRefreshTokenFromCookies();
     if (refreshToken) {
       const payload = verifyRefreshToken(refreshToken);
-      if (payload?.role === "admin") return { ok: true, userId: payload.userId };
+      if (payload?.role === "admin") return { ok: true, userId: payload.userId, email: payload.email };
     }
 
     const session = await getServerSession(authOptions);
     if ((session?.user as any)?.role === "admin") {
-      return { ok: true, userId: (session?.user as any)?.id };
+      return { ok: true, userId: (session?.user as any)?.id, email: (session?.user as any)?.email };
     }
   } catch {
     // ignore
@@ -32,7 +32,7 @@ async function verifyAdmin(): Promise<{ ok: boolean; userId?: string }> {
 }
 
 export async function GET(req: Request) {
-  const { ok } = await verifyAdmin();
+  const { ok, userId, email } = await verifyAdmin();
   if (!ok) {
     return NextResponse.json({ success: false, message: "Unauthorized. Admin access required." }, { status: 403 });
   }
@@ -47,15 +47,28 @@ export async function GET(req: Request) {
     const page = parseInt(searchParams.get("page") || "1", 10);
     const limit = parseInt(searchParams.get("limit") || "20", 10);
 
-    // Build filter query
+    // Exclude currently logged in admin user
+    const excludeConditions: any[] = [];
+    if (userId) excludeConditions.push({ _id: { $ne: userId } });
+    if (email) excludeConditions.push({ email: { $ne: email.toLowerCase() } });
+
     const filter: Record<string, any> = {};
+    if (excludeConditions.length > 0) {
+      filter.$and = excludeConditions;
+    }
+
     if (search) {
-      filter.$or = [
+      const searchOr = [
         { email: { $regex: search, $options: "i" } },
         { firstName: { $regex: search, $options: "i" } },
         { lastName: { $regex: search, $options: "i" } },
         { name: { $regex: search, $options: "i" } },
       ];
+      if (filter.$and) {
+        filter.$and.push({ $or: searchOr });
+      } else {
+        filter.$or = searchOr;
+      }
     }
     if (plan !== "all") filter.plan = plan;
     if (status !== "all") filter.status = status;
@@ -78,14 +91,18 @@ export async function GET(req: Request) {
     const auditCountMap: Record<string, number> = {};
     auditCounts.forEach((a: any) => { auditCountMap[a._id] = a.count; });
 
-    // Summary stats
-    const totalUsers = await User.countDocuments({});
-    const activeUsers = await User.countDocuments({ status: "active" });
-    const paidUsers = await User.countDocuments({ plan: { $in: ["starter", "pro", "enterprise"] } });
+    // Summary stats (excluding current logged-in admin)
+    const baseExcludeFilter: Record<string, any> = {};
+    if (userId) baseExcludeFilter._id = { $ne: userId };
+    else if (email) baseExcludeFilter.email = { $ne: email.toLowerCase() };
+
+    const totalUsers = await User.countDocuments(baseExcludeFilter);
+    const activeUsers = await User.countDocuments({ ...baseExcludeFilter, status: "active" });
+    const paidUsers = await User.countDocuments({ ...baseExcludeFilter, plan: { $in: ["starter", "pro", "enterprise"] } });
     const thisMonthStart = new Date();
     thisMonthStart.setDate(1);
     thisMonthStart.setHours(0, 0, 0, 0);
-    const newThisMonth = await User.countDocuments({ createdAt: { $gte: thisMonthStart } });
+    const newThisMonth = await User.countDocuments({ ...baseExcludeFilter, createdAt: { $gte: thisMonthStart } });
 
     return NextResponse.json({
       success: true,

@@ -9,7 +9,7 @@ import {
   ArrowLeft, User, Mail, Calendar, Activity, Globe, Shield,
   CreditCard, CheckCircle, XCircle, Loader2, AlertTriangle,
   ChevronDown, ChevronRight, BarChart3, Zap, Lock, Smartphone,
-  Search, FileText, Gauge
+  Search, FileText, Gauge, Trash2
 } from "lucide-react";
 
 interface UserProfile {
@@ -128,6 +128,11 @@ export default function AdminUserDetailPage() {
   const [error, setError] = useState("");
   const [expandedAuditId, setExpandedAuditId] = useState<string | null>(null);
 
+  // Delete modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+
   useEffect(() => {
     if (!isAdmin) { router.push("/dashboard"); return; }
 
@@ -162,6 +167,27 @@ export default function AdminUserDetailPage() {
     loadAudits();
   }, [isAdmin, router, userId]);
 
+  const handleDeleteUser = async () => {
+    if (!profile) return;
+    setIsDeleting(true);
+    setDeleteError("");
+    try {
+      const res = await fetch(`/api/admin/users/${profile._id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (data.success) {
+        router.push("/admin/users");
+      } else {
+        setDeleteError(data.message || "Failed to delete user.");
+      }
+    } catch {
+      setDeleteError("Network error while deleting user.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (!isAdmin) return null;
 
   if (isLoadingProfile) {
@@ -186,26 +212,39 @@ export default function AdminUserDetailPage() {
 
   return (
     <div className="flex flex-col gap-8 pb-16">
-      {/* Back Navigation */}
-      <div>
-        <button
-          onClick={() => router.push("/admin/users")}
-          className="flex items-center gap-2 text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer mb-4"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Users
-        </button>
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-900">
-            <Shield className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-              User Details
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">{profile.email}</p>
+      {/* Back Navigation & Action Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <button
+            onClick={() => router.push("/admin/users")}
+            className="flex items-center gap-2 text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer mb-4"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Users
+          </button>
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-900">
+              <Shield className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+                User Details
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{profile.email}</p>
+            </div>
           </div>
         </div>
+
+        <button
+          onClick={() => {
+            setShowDeleteModal(true);
+            setDeleteError("");
+          }}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900 hover:bg-red-600 hover:text-white transition-colors cursor-pointer self-start sm:self-auto shadow-sm"
+        >
+          <Trash2 className="h-4 w-4" />
+          Delete User Permanently
+        </button>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
@@ -463,6 +502,69 @@ export default function AdminUserDetailPage() {
           </GlassCard>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && profile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/80 border border-red-200 dark:border-red-900 text-red-600 dark:text-red-400">
+                <AlertTriangle className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-slate-900 dark:text-white">Delete User Permanently</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">This action cannot be undone.</p>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-xs space-y-1">
+              <p className="font-bold text-slate-800 dark:text-slate-200">
+                {getDisplayName(profile)}
+              </p>
+              <p className="text-slate-500 dark:text-slate-400">{profile.email}</p>
+              <p className="text-[11px] text-red-600 dark:text-red-400 pt-2 font-semibold">
+                Deleting will permanently erase this user account and all associated audit reports from the database.
+              </p>
+            </div>
+
+            {deleteError && (
+              <p className="text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/60 p-3 rounded-xl border border-red-200 dark:border-red-900">
+                {deleteError}
+              </p>
+            )}
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                disabled={isDeleting}
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeleteError("");
+                }}
+                className="px-4 py-2.5 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 cursor-pointer disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={isDeleting}
+                onClick={handleDeleteUser}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-red-600 text-white hover:bg-red-700 cursor-pointer shadow-lg shadow-red-500/20 disabled:opacity-50"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4" />
+                    Permanently Delete
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

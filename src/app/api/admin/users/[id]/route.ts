@@ -7,32 +7,34 @@ import { verifyAccessToken, verifyRefreshToken } from "@/lib/auth/jwt";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
-async function verifyAdmin(): Promise<boolean> {
+async function verifyAdmin(): Promise<{ ok: boolean; userId?: string; email?: string }> {
   try {
     const accessToken = await getAccessTokenFromCookies();
     if (accessToken) {
       const payload = verifyAccessToken(accessToken);
-      if (payload?.role === "admin") return true;
+      if (payload?.role === "admin") return { ok: true, userId: payload.userId, email: payload.email };
     }
     const refreshToken = await getRefreshTokenFromCookies();
     if (refreshToken) {
       const payload = verifyRefreshToken(refreshToken);
-      if (payload?.role === "admin") return true;
+      if (payload?.role === "admin") return { ok: true, userId: payload.userId, email: payload.email };
     }
     const session = await getServerSession(authOptions);
-    if ((session?.user as any)?.role === "admin") return true;
+    if ((session?.user as any)?.role === "admin") {
+      return { ok: true, userId: (session?.user as any)?.id, email: (session?.user as any)?.email };
+    }
   } catch {
     // ignore
   }
-  return false;
+  return { ok: false };
 }
 
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const isAdmin = await verifyAdmin();
-  if (!isAdmin) {
+  const { ok } = await verifyAdmin();
+  if (!ok) {
     return NextResponse.json({ success: false, message: "Unauthorized. Admin access required." }, { status: 403 });
   }
 
@@ -71,5 +73,53 @@ export async function GET(
     });
   } catch (error: any) {
     return NextResponse.json({ success: false, message: error.message || "Failed to fetch user." }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { ok, userId: adminUserId } = await verifyAdmin();
+  if (!ok) {
+    return NextResponse.json({ success: false, message: "Unauthorized. Admin access required." }, { status: 403 });
+  }
+
+  try {
+    const { id } = await params;
+    if (!id) {
+      return NextResponse.json({ success: false, message: "User ID is required." }, { status: 400 });
+    }
+
+    if (adminUserId && id === adminUserId) {
+      return NextResponse.json(
+        { success: false, message: "You cannot delete your own logged-in admin account." },
+        { status: 400 }
+      );
+    }
+
+    await connectToDatabase();
+
+    const user = await User.findById(id);
+    if (!user) {
+      return NextResponse.json({ success: false, message: "User not found or already deleted." }, { status: 404 });
+    }
+
+    // Permanently delete user document from MongoDB
+    await User.findByIdAndDelete(id);
+
+    // Delete all associated audit reports for this user permanently from DB
+    await AuditReport.deleteMany({ userId: id });
+
+    return NextResponse.json({
+      success: true,
+      message: "User and all associated audit data permanently deleted.",
+      deletedUserId: id,
+    });
+  } catch (error: any) {
+    return NextResponse.json(
+      { success: false, message: error.message || "Failed to delete user." },
+      { status: 500 }
+    );
   }
 }
