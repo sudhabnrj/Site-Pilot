@@ -18,7 +18,7 @@ export function PdfAiRecommendationItem({
   return (
     <div
       className={cn(
-        "flex items-start gap-4 p-4 bg-indigo-50/20 border border-indigo-100/60 rounded-xl transition-all duration-300",
+        "flex items-start gap-4 p-4 dark:bg-slate-00 bg-indigo-50/20 border border-indigo-100/60 rounded-xl transition-all duration-300",
         isLowPriority && "opacity-60"
       )}
     >

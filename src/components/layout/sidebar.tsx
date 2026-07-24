@@ -180,7 +180,7 @@ export function Sidebar({ className, isCollapsed = false, onToggle }: SidebarPro
               </p>
               <button
                 onClick={() => router.push("/upgrade")}
-                className="mt-3 w-full rounded-full bg-white py-2 text-xs font-bold text-blue-700 hover:bg-blue-50 active:scale-95 transition-all shadow-sm cursor-pointer"
+                className="mt-3 w-full relative zindex-10 rounded-full bg-white py-2 text-xs font-bold text-blue-700 hover:bg-blue-50 active:scale-95 transition-all shadow-sm cursor-pointer"
               >
                 Upgrade Now
               </button>
