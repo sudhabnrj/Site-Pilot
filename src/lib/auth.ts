@@ -35,6 +35,7 @@ export const authOptions: NextAuthOptions = {
         const cleanEmail = user.email.toLowerCase();
         const providerName = (account?.provider || "google") as "google" | "github";
         const providerAccId = account?.providerAccountId || (user as any).id || "";
+        const oauthImage = user.image || (profile as any)?.picture || (profile as any)?.avatar_url || "";
 
         let existingUser = await User.findOne({ email: cleanEmail });
 
@@ -50,10 +51,10 @@ export const authOptions: NextAuthOptions = {
             existingUser.provider = providerName;
             updated = true;
           }
-          if (!existingUser.image && user.image) {
-            existingUser.image = user.image;
-            existingUser.profileImage = user.image;
-            existingUser.avatar = user.image;
+          if (oauthImage && (existingUser.image !== oauthImage || !existingUser.profileImage)) {
+            existingUser.image = oauthImage;
+            existingUser.profileImage = oauthImage;
+            existingUser.avatar = oauthImage;
             updated = true;
           }
           if (!existingUser.isEmailVerified) {
@@ -64,7 +65,9 @@ export const authOptions: NextAuthOptions = {
           await existingUser.save();
 
           user.id = (existingUser._id || existingUser.id).toString();
+          user.image = existingUser.profileImage || existingUser.image || oauthImage;
           (user as any).role = existingUser.role || "user";
+          (user as any).provider = existingUser.provider || providerName;
         } else {
           // Parse first and last name from OAuth name
           const fullName = user.name || cleanEmail.split("@")[0] || "User";
@@ -77,9 +80,9 @@ export const authOptions: NextAuthOptions = {
             name: fullName,
             firstName,
             lastName,
-            image: user.image || "",
-            profileImage: user.image || "",
-            avatar: user.image || "",
+            image: oauthImage,
+            profileImage: oauthImage,
+            avatar: oauthImage,
             provider: providerName,
             providerAccountId: providerAccId,
             providerId: providerAccId,
@@ -91,8 +94,10 @@ export const authOptions: NextAuthOptions = {
           });
 
           user.id = (newUser._id || newUser.id).toString();
+          user.image = oauthImage;
           (user as any).role = newUser.role || "user";
-          console.log(`✅ [NextAuth OAuth] Created new ${providerName} user: '${cleanEmail}'`);
+          (user as any).provider = providerName;
+          console.log(`✅ [NextAuth OAuth] Created new ${providerName} user: '${cleanEmail}' with image`);
         }
 
         return true;
@@ -102,13 +107,14 @@ export const authOptions: NextAuthOptions = {
       }
     },
 
-    async jwt({ token, user, account }) {
+    async jwt({ token, user, account, profile }) {
       if (user) {
         token.id = user.id;
         token.userId = user.id;
         token.email = user.email;
         token.role = (user as any).role || "user";
-        token.provider = account?.provider || "oauth";
+        token.provider = account?.provider || (user as any).provider || "oauth";
+        token.image = user.image || (user as any).profileImage || (profile as any)?.picture || (profile as any)?.avatar_url || token.image || "";
 
         // Issue application JWT cookies (accessToken & refreshToken) for seamless session sync
         try {
@@ -132,6 +138,9 @@ export const authOptions: NextAuthOptions = {
         (session.user as any).id = token.userId || token.id;
         (session.user as any).role = token.role || "user";
         (session.user as any).provider = token.provider || "oauth";
+        session.user.image = (token.image as string) || session.user.image || "";
+        (session.user as any).profileImage = session.user.image;
+        (session.user as any).avatar = session.user.image;
       }
       return session;
     },

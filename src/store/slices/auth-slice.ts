@@ -10,6 +10,9 @@ export interface AuthUser {
   plan?: "free" | "starter" | "pro" | "enterprise";
   isEmailVerified?: boolean;
   profileImage?: string;
+  image?: string;
+  avatar?: string;
+  provider?: string;
   lastLogin?: string | null;
 }
 

@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { NavItem } from "@/components/ui/nav-item";
 import { BRAND, SIDEBAR_NAV_ITEMS, SIDEBAR_BOTTOM_ITEMS } from "@/constants/navigation";
 import { Brain, Zap, ChevronLeft, ChevronRight, LogOut } from "lucide-react";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { logout } from "@/store/slices/auth-slice";
 
@@ -19,7 +19,10 @@ export function Sidebar({ className, isCollapsed = false, onToggle }: SidebarPro
   const router = useRouter();
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
+  const { data: session } = useSession();
   const isAdmin = user?.role === "admin";
+
+  const userAvatar = user?.profileImage || user?.image || user?.avatar || session?.user?.image || "";
 
   const handleLogout = async () => {
     try {
@@ -40,8 +43,8 @@ export function Sidebar({ className, isCollapsed = false, onToggle }: SidebarPro
   const displayName = user
     ? user.firstName || user.lastName
       ? `${user.firstName || ""} ${user.lastName || ""}`.trim()
-      : (user as any).name || "User"
-    : "Guest User";
+      : (user as any).name || (session?.user?.name) || "User"
+    : session?.user?.name || "Guest User";
 
   const initials = displayName
     ? displayName
@@ -53,7 +56,7 @@ export function Sidebar({ className, isCollapsed = false, onToggle }: SidebarPro
     : "GU";
 
   const fullName = displayName;
-  const userEmail = user?.email || "";
+  const userEmail = user?.email || session?.user?.email || "guest@sitepilot.com";
 
   const userPlan = isAdmin
     ? "admin"
@@ -194,9 +197,14 @@ export function Sidebar({ className, isCollapsed = false, onToggle }: SidebarPro
               onClick={handleLogout}
               className="h-9 w-9 rounded-full overflow-hidden border border-slate-300 dark:border-slate-700 shadow-sm cursor-pointer"
             >
-              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600 text-xs font-bold text-white">
-                {initials}
-              </div>
+              {userAvatar ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={userAvatar} alt={fullName} className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600 text-xs font-bold text-white">
+                  {initials}
+                </div>
+              )}
             </div>
             <div className="absolute left-full ml-3 p-2 bg-slate-900 text-white text-xs rounded opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-lg">
               <p className="font-semibold">{fullName}</p>
@@ -207,9 +215,14 @@ export function Sidebar({ className, isCollapsed = false, onToggle }: SidebarPro
           <div className="flex items-center justify-between gap-3 px-1">
             <div className="flex items-center gap-3 min-w-0">
               <div className="h-9 w-9 shrink-0 rounded-full overflow-hidden border border-slate-300 dark:border-slate-700 shadow-sm">
-                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600 text-xs font-bold text-white">
-                  {initials}
-                </div>
+                {userAvatar ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={userAvatar} alt={fullName} className="h-full w-full object-cover" />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600 text-xs font-bold text-white">
+                    {initials}
+                  </div>
+                )}
               </div>
               <div className="flex flex-col min-w-0">
                 <span className="text-xs font-semibold text-slate-900 dark:text-white truncate">{fullName}</span>

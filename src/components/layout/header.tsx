@@ -22,7 +22,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { logout } from "@/store/slices/auth-slice";
 import { executeAudit, setCurrentReport } from "@/store/slices/audit-slice";
@@ -282,11 +282,23 @@ export function Header({ onMobileMenuToggle, className }: HeaderProps) {
     });
   };
 
+  const { data: session } = useSession();
+
+  const userAvatar =
+    user?.profileImage ||
+    user?.image ||
+    user?.avatar ||
+    session?.user?.image ||
+    "";
+
+  const userProvider =
+    user?.provider || (session?.user as any)?.provider || "";
+
   const displayName = user
     ? user.firstName || user.lastName
       ? `${user.firstName || ""} ${user.lastName || ""}`.trim()
-      : (user as any).name || "User"
-    : "Guest User";
+      : (user as any).name || session?.user?.name || "User"
+    : session?.user?.name || "Guest User";
 
   const initials = displayName
     ? displayName
@@ -298,7 +310,7 @@ export function Header({ onMobileMenuToggle, className }: HeaderProps) {
     : "GU";
 
   const fullName = displayName;
-  const userEmail = user?.email || "";
+  const userEmail = user?.email || session?.user?.email || "guest@sitepilot.com";
 
   // Close menus when clicking outside
   useEffect(() => {
@@ -425,12 +437,12 @@ export function Header({ onMobileMenuToggle, className }: HeaderProps) {
         <div ref={notifRef} className="relative">
           <button
             onClick={() => setIsNotifOpen(!isNotifOpen)}
-            className="text-slate-500 dark:text-slate-400 transition-colors hover:text-blue-600 p-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg relative cursor-pointer"
-            aria-label="Notifications"
+            className="relative p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            aria-label="View notifications"
           >
-            <Bell className="h-5 w-5" />
+            <Bell className="h-4 w-4 text-slate-600 dark:text-slate-300" />
             {unreadCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-black text-white ring-2 ring-white dark:ring-slate-900 animate-pulse">
+              <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-blue-600 text-[9px] font-bold text-white shadow-sm">
                 {unreadCount}
               </span>
             )}
@@ -447,10 +459,10 @@ export function Header({ onMobileMenuToggle, className }: HeaderProps) {
               >
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
                   <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-black text-slate-900 dark:text-white">Notifications</h3>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">Notifications</h3>
                     {unreadCount > 0 && (
-                      <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-300">
-                        {unreadCount} New
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+                        {unreadCount} new
                       </span>
                     )}
                   </div>
@@ -458,7 +470,7 @@ export function Header({ onMobileMenuToggle, className }: HeaderProps) {
                     {unreadCount > 0 && (
                       <button
                         onClick={markAllNotificationsAsRead}
-                        className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+                        className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
                       >
                         Mark all read
                       </button>
@@ -466,8 +478,8 @@ export function Header({ onMobileMenuToggle, className }: HeaderProps) {
                     {notifications.length > 0 && (
                       <button
                         onClick={clearAllNotifications}
-                        className="text-slate-400 hover:text-red-500 p-1 transition-colors cursor-pointer"
-                        title="Clear all notifications"
+                        className="text-[11px] font-semibold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                        title="Clear all"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -475,10 +487,10 @@ export function Header({ onMobileMenuToggle, className }: HeaderProps) {
                   </div>
                 </div>
 
-                <div className="divide-y divide-slate-100 dark:divide-slate-800/60 max-h-80 overflow-y-auto my-1">
+                <div className="mt-3 space-y-2 max-h-72 overflow-y-auto pr-1">
                   {notifications.length === 0 ? (
-                    <div className="py-8 text-center text-slate-400 text-xs font-semibold">
-                      No notifications to display.
+                    <div className="py-8 text-center text-xs text-slate-400">
+                      No notifications yet
                     </div>
                   ) : (
                     notifications.map((notif) => (
@@ -486,15 +498,16 @@ export function Header({ onMobileMenuToggle, className }: HeaderProps) {
                         key={notif.id}
                         onClick={() => toggleNotificationRead(notif.id)}
                         className={cn(
-                          "py-3 px-2 flex items-start gap-3 rounded-xl transition-colors cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/60",
-                          !notif.read && "bg-blue-50/40 dark:bg-blue-950/20"
+                          "flex items-start gap-3 p-2.5 rounded-xl transition-all cursor-pointer border",
+                          notif.read
+                            ? "bg-slate-50/50 dark:bg-slate-950/40 border-transparent hover:bg-slate-100/60 dark:hover:bg-slate-800/60"
+                            : "bg-blue-50/40 dark:bg-blue-950/30 border-blue-100 dark:border-blue-900/40 hover:bg-blue-50/70"
                         )}
                       >
-                        <div className="mt-0.5 shrink-0">
+                        <div className="shrink-0 mt-0.5">
                           {notif.type === "success" && <CheckCircle2 className="h-4 w-4 text-emerald-500" />}
                           {notif.type === "warning" && <AlertTriangle className="h-4 w-4 text-amber-500" />}
                           {notif.type === "info" && <Info className="h-4 w-4 text-blue-500" />}
-                          {notif.type === "critical" && <AlertTriangle className="h-4 w-4 text-red-500" />}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
@@ -507,9 +520,6 @@ export function Header({ onMobileMenuToggle, className }: HeaderProps) {
                             {notif.description}
                           </p>
                         </div>
-                        {!notif.read && (
-                          <span className="h-2 w-2 rounded-full bg-blue-600 shrink-0 mt-1.5" />
-                        )}
                       </div>
                     ))
                   )}
@@ -523,14 +533,26 @@ export function Header({ onMobileMenuToggle, className }: HeaderProps) {
         <div ref={userMenuRef} className="relative">
           <button
             onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-            className="h-8 w-8 overflow-hidden rounded-full border border-slate-300 shadow-sm hover:border-slate-400 transition-colors focus:outline-none cursor-pointer"
+            className="h-9 w-9 overflow-hidden rounded-full border-2 border-slate-200 dark:border-slate-700 shadow-sm hover:border-blue-500 dark:hover:border-blue-400 transition-all focus:outline-none cursor-pointer"
             aria-haspopup="true"
             aria-expanded={isUserMenuOpen}
             aria-label="User menu"
           >
-            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600 text-xs font-bold text-white">
-              {initials}
-            </div>
+            {userAvatar ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={userAvatar}
+                alt={fullName}
+                className="h-full w-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                }}
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600 text-xs font-bold text-white">
+                {initials}
+              </div>
+            )}
           </button>
 
           <AnimatePresence>
@@ -540,11 +562,35 @@ export function Header({ onMobileMenuToggle, className }: HeaderProps) {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 8, scale: 0.95 }}
                 transition={{ duration: 0.15 }}
-                className="absolute right-0 mt-2 w-56 rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 p-1.5 shadow-lg ring-1 ring-black/5 z-50 focus:outline-none"
+                className="absolute right-0 mt-2 w-64 rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 p-2 shadow-xl ring-1 ring-black/5 z-50 focus:outline-none"
               >
-                <div className="px-3 py-2">
-                  <p className="text-xs font-semibold text-slate-950 dark:text-white">{fullName}</p>
-                  <p className="text-[10px] text-muted-foreground truncate">{userEmail}</p>
+                <div className="px-3 py-3 flex items-center gap-3 bg-slate-50/80 dark:bg-slate-950/60 rounded-xl mb-1 border border-slate-100 dark:border-slate-800">
+                  <div className="h-10 w-10 shrink-0 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700 shadow-sm">
+                    {userAvatar ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={userAvatar} alt={fullName} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600 text-xs font-bold text-white">
+                        {initials}
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-xs font-bold text-slate-950 dark:text-white truncate">{fullName}</p>
+                      {userProvider === "google" && (
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-900 shrink-0">
+                          Google
+                        </span>
+                      )}
+                      {userProvider === "github" && (
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 shrink-0">
+                          GitHub
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-muted-foreground truncate mt-0.5">{userEmail}</p>
+                  </div>
                 </div>
                 <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
                 <button
@@ -552,7 +598,7 @@ export function Header({ onMobileMenuToggle, className }: HeaderProps) {
                     setIsUserMenuOpen(false);
                     router.push("/settings");
                   }}
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer font-medium"
                 >
                   <User className="h-3.5 w-3.5 text-slate-400" />
                   My Profile
@@ -562,7 +608,7 @@ export function Header({ onMobileMenuToggle, className }: HeaderProps) {
                     setIsUserMenuOpen(false);
                     router.push("/settings");
                   }}
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer font-medium"
                 >
                   <Settings className="h-3.5 w-3.5 text-slate-400" />
                   Settings
@@ -572,7 +618,7 @@ export function Header({ onMobileMenuToggle, className }: HeaderProps) {
                     setIsUserMenuOpen(false);
                     router.push("/billing");
                   }}
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer font-medium"
                 >
                   <CreditCard className="h-3.5 w-3.5 text-slate-400" />
                   Billing
@@ -580,7 +626,7 @@ export function Header({ onMobileMenuToggle, className }: HeaderProps) {
                 <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
                 <button
                   onClick={handleLogout}
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors font-medium cursor-pointer"
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors font-semibold cursor-pointer"
                 >
                   <LogOut className="h-3.5 w-3.5 text-red-500" />
                   Logout
