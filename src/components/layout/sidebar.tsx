@@ -187,12 +187,12 @@ export function Sidebar({ className, isCollapsed = false, onToggle }: SidebarPro
       )}
 
       {/* User Profile Block */}
-      <div className="border-t border-slate-200 pt-4">
+      <div className="border-t border-slate-200 dark:border-slate-800 pt-4">
         {isCollapsed ? (
           <div className="flex justify-center group relative">
             <div
               onClick={handleLogout}
-              className="h-9 w-9 rounded-full overflow-hidden border border-slate-300 shadow-sm cursor-pointer"
+              className="h-9 w-9 rounded-full overflow-hidden border border-slate-300 dark:border-slate-700 shadow-sm cursor-pointer"
             >
               <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600 text-xs font-bold text-white">
                 {initials}
@@ -206,19 +206,19 @@ export function Sidebar({ className, isCollapsed = false, onToggle }: SidebarPro
         ) : (
           <div className="flex items-center justify-between gap-3 px-1">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="h-9 w-9 shrink-0 rounded-full overflow-hidden border border-slate-300 shadow-sm">
+              <div className="h-9 w-9 shrink-0 rounded-full overflow-hidden border border-slate-300 dark:border-slate-700 shadow-sm">
                 <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600 text-xs font-bold text-white">
                   {initials}
                 </div>
               </div>
               <div className="flex flex-col min-w-0">
-                <span className="text-xs font-semibold text-slate-900 truncate">{fullName}</span>
+                <span className="text-xs font-semibold text-slate-900 dark:text-white truncate">{fullName}</span>
                 <span className="text-[10px] text-muted-foreground truncate">{userEmail}</span>
               </div>
             </div>
             <button
               onClick={handleLogout}
-              className="text-muted-foreground hover:text-red-600 transition-colors shrink-0 p-1.5 hover:bg-red-50 rounded-lg cursor-pointer"
+              className="text-muted-foreground hover:text-red-600 dark:hover:text-red-400 transition-colors shrink-0 p-1.5 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg cursor-pointer"
               aria-label="Logout"
               title="Sign Out"
             >

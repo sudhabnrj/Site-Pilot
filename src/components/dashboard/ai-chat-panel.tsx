@@ -101,7 +101,7 @@ export function AiChatPanel({ messages: initialMessages, className }: AiChatPane
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 20, scale: 0.95 }}
         className={cn(
-          "fixed bottom-6 right-6 z-50 w-96 overflow-hidden rounded-2xl border border-border/50 bg-white shadow-2xl",
+          "fixed bottom-6 right-6 z-50 w-96 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl transition-colors",
           className
         )}
       >
@@ -137,7 +137,7 @@ export function AiChatPanel({ messages: initialMessages, className }: AiChatPane
         {!isMinimized && (
           <>
             {/* Messages */}
-            <div ref={chatContainerRef} className="h-64 space-y-4 overflow-y-auto bg-slate-50/50 p-4">
+            <div ref={chatContainerRef} className="h-64 space-y-4 overflow-y-auto bg-slate-50/50 dark:bg-slate-950/80 p-4">
               {messages.map((msg) => (
                 <div
                   key={msg.id}
@@ -155,7 +155,7 @@ export function AiChatPanel({ messages: initialMessages, className }: AiChatPane
                     className={cn(
                       "max-w-[82%] rounded-2xl p-3 text-xs leading-relaxed shadow-xs whitespace-pre-line",
                       msg.role === "assistant"
-                        ? "rounded-tl-none bg-white border border-slate-200 text-slate-800"
+                        ? "rounded-tl-none bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100"
                         : "rounded-tr-none bg-blue-600 text-white font-medium"
                     )}
                   >
@@ -172,13 +172,13 @@ export function AiChatPanel({ messages: initialMessages, className }: AiChatPane
             </div>
 
             {/* Input */}
-            <form onSubmit={handleSendMessage} className="flex gap-2 border-t border-border/50 bg-white p-3">
+            <form onSubmit={handleSendMessage} className="flex gap-2 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3">
               <input
                 type="text"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 placeholder="Ask how to fix SEO, performance..."
-                className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                className="flex-1 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-3.5 py-2 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 aria-label="Chat message input"
               />
               <button

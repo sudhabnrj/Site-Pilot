@@ -69,7 +69,7 @@ export function PerformanceChart({ data: originalData, config, className }: Perf
     <GlassCard className={cn("p-6", className)}>
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h3 className="text-xl font-semibold tracking-tight">Performance Core Vitals</h3>
+          <h3 className="text-xl font-black tracking-tight text-slate-900 dark:text-white">Performance Core Vitals</h3>
           <p className="text-sm text-muted-foreground">
             Real-user monitoring and simulated audit data over time.
           </p>
@@ -77,7 +77,7 @@ export function PerformanceChart({ data: originalData, config, className }: Perf
         <select
           value={selectedPeriod}
           onChange={(e) => setSelectedPeriod(e.target.value as any)}
-          className="rounded-lg border border-border/50 bg-background px-4 py-2 text-xs font-semibold text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+          className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
           aria-label="Select time period"
         >
           {TIME_PERIODS.map((period) => (
@@ -91,23 +91,25 @@ export function PerformanceChart({ data: originalData, config, className }: Perf
       <div className="h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#334155" strokeOpacity={0.4} />
             <XAxis
               dataKey={config.xAxisKey}
               tick={{ fontSize: 10, fill: "#94a3b8" }}
-              axisLine={{ stroke: "#e2e8f0" }}
+              axisLine={{ stroke: "#475569" }}
               tickLine={false}
             />
             <YAxis
               tick={{ fontSize: 10, fill: "#94a3b8" }}
-              axisLine={{ stroke: "#e2e8f0" }}
+              axisLine={{ stroke: "#475569" }}
               tickLine={false}
             />
             <Tooltip
               contentStyle={{
                 borderRadius: "12px",
-                border: "1px solid #e2e8f0",
-                boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+                border: "1px solid #334155",
+                backgroundColor: "#0f172a",
+                color: "#f8fafc",
+                boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
               }}
             />
             {config.series.map((series) => (
@@ -133,7 +135,7 @@ export function PerformanceChart({ data: originalData, config, className }: Perf
               className="h-3 w-3 rounded-full"
               style={{ backgroundColor: series.color, opacity: series.opacity ?? 1 }}
             />
-            <span className="text-xs font-semibold text-slate-600">{series.label}</span>
+            <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">{series.label}</span>
           </div>
         ))}
       </div>

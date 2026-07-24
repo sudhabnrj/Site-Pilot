@@ -155,10 +155,10 @@ export default function WebsitesPage() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-3xl font-black tracking-tight text-slate-900">
+            <h2 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">
               Monitored Websites
             </h2>
-            <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-100">
+            <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-50 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-900">
               {websites.length}/{isAdmin ? "∞" : maxSites} Used ({userPlan} plan)
             </span>
           </div>
@@ -167,13 +167,13 @@ export default function WebsitesPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center bg-slate-100 border border-slate-200/60 rounded-xl p-1 shadow-inner">
+          <div className="flex items-center bg-slate-100 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-xl p-1 shadow-inner">
             <button
               onClick={() => setViewMode("grid")}
               className={`p-2 rounded-lg transition-all ${
                 viewMode === "grid"
-                  ? "bg-white text-blue-600 shadow-sm"
-                  : "text-slate-400 hover:text-slate-700"
+                  ? "bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm"
+                  : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
               }`}
               aria-label="Grid view"
             >
@@ -183,8 +183,8 @@ export default function WebsitesPage() {
               onClick={() => setViewMode("list")}
               className={`p-2 rounded-lg transition-all ${
                 viewMode === "list"
-                  ? "bg-white text-blue-600 shadow-sm"
-                  : "text-slate-400 hover:text-slate-700"
+                  ? "bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm"
+                  : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
               }`}
               aria-label="List view"
             >
@@ -203,31 +203,31 @@ export default function WebsitesPage() {
       </div>
 
       {/* Filters Bar */}
-      <div className="flex flex-wrap items-center gap-4 bg-white/80 border border-slate-200/60 backdrop-blur rounded-[24px] p-4 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+      <div className="flex flex-wrap items-center gap-4 bg-white/80 dark:bg-slate-900/80 border border-slate-200/60 dark:border-slate-800 backdrop-blur rounded-[24px] p-4 shadow-[0_4px_20px_rgba(0,0,0,0.02)] dark:shadow-2xl">
         <div className="flex-1 min-w-[240px] relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 h-5 w-5" />
           <input
             value={filterText}
             onChange={(e) => setFilterText(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-transparent border-none focus:outline-none focus:ring-0 text-sm text-slate-700 placeholder-slate-400"
+            className="w-full pl-10 pr-4 py-2 bg-transparent border-none focus:outline-none focus:ring-0 text-sm text-slate-700 dark:text-slate-100 placeholder-slate-400"
             placeholder="Filter by domain name..."
             type="text"
             aria-label="Filter websites"
           />
         </div>
-        <div className="h-6 w-px bg-slate-200 hidden md:block" />
+        <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 hidden md:block" />
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4 text-slate-400" />
           <span className="text-xs font-semibold text-slate-400">Status:</span>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-transparent border-none text-xs font-bold text-slate-700 focus:outline-none focus:ring-0 py-0 cursor-pointer"
+            className="bg-transparent border-none text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-0 py-0 cursor-pointer"
             aria-label="Filter by status"
           >
-            <option>All Statuses</option>
-            <option value="active">Active</option>
-            <option value="scanning">Scanning</option>
+            <option className="dark:bg-slate-900 dark:text-white">All Statuses</option>
+            <option className="dark:bg-slate-900 dark:text-white" value="active">Active</option>
+            <option className="dark:bg-slate-900 dark:text-white" value="scanning">Scanning</option>
           </select>
         </div>
         <div className="h-6 w-px bg-slate-200 hidden md:block" />
