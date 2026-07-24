@@ -90,8 +90,17 @@ function PaymentContent() {
     setIsProcessing(false);
     setPaymentSuccess(true);
 
-    // Update Redux state & localStorage
+    // Update Redux state & localStorage & MongoDB Atlas backend
     dispatch(updateUserPlan(planId as any));
+    try {
+      await fetch("/api/user/plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: planId }),
+      });
+    } catch {
+      // ignore
+    }
     if (typeof window !== "undefined") {
       localStorage.setItem("user_plan", planId);
 

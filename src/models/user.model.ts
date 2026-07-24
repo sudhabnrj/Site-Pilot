@@ -11,6 +11,7 @@ export interface IUser {
   image?: string;
   avatar?: string;
   role: "admin" | "user";
+  plan: "free" | "starter" | "pro" | "enterprise";
   status: "active" | "inactive";
   isEmailVerified: boolean;
   emailVerified?: boolean | Date | null;
@@ -77,6 +78,11 @@ const UserSchema: Schema<IUserDocument> = new Schema(
       type: String,
       enum: ["admin", "user"],
       default: "user",
+    },
+    plan: {
+      type: String,
+      enum: ["free", "starter", "pro", "enterprise"],
+      default: "free",
     },
     status: {
       type: String,

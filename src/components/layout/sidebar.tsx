@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { NavItem } from "@/components/ui/nav-item";
 import { BRAND, SIDEBAR_NAV_ITEMS, SIDEBAR_BOTTOM_ITEMS } from "@/constants/navigation";
-import { Brain, Zap, ChevronLeft, ChevronRight, LogOut } from "lucide-react";
+import { Brain, Zap, ChevronLeft, ChevronRight, LogOut, Users, ShieldCheck } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { logout } from "@/store/slices/auth-slice";
@@ -148,7 +148,22 @@ export function Sidebar({ className, isCollapsed = false, onToggle }: SidebarPro
           />
         ))}
 
-        <div className="pt-6 mt-6 border-t border-slate-200/60">
+        {/* Admin Section — visible only to admin role */}
+        {isAdmin && (
+          <div className="pt-4 mt-4 border-t border-purple-200/60 dark:border-purple-900/40">
+            {!isCollapsed && (
+              <p className="px-3 pb-2 text-[9px] font-black uppercase tracking-widest text-purple-500 dark:text-purple-400">
+                Admin Panel
+              </p>
+            )}
+            <NavItem
+              item={{ label: "Users", icon: "Users", href: "/admin/users" }}
+              isCollapsed={isCollapsed}
+            />
+          </div>
+        )}
+
+        <div className="pt-6 mt-6 border-t border-slate-200/60 dark:border-slate-800/60">
           {SIDEBAR_BOTTOM_ITEMS.map((item) => (
             <NavItem key={item.href} item={item} isCollapsed={isCollapsed} />
           ))}
