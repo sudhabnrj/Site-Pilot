@@ -77,11 +77,9 @@ export default function DashboardPage() {
         maxScore: 100,
         status: currentReport.status,
         statusColor:
-          currentReport.overallScore >= 90
-            ? "text-green-600"
-            : currentReport.overallScore >= 75
-            ? "text-blue-600"
-            : currentReport.overallScore >= 60
+          currentReport.overallScore >= 80
+            ? "text-emerald-600"
+            : currentReport.overallScore >= 70
             ? "text-amber-500"
             : "text-red-500",
         scanDuration: currentReport.scanDuration,

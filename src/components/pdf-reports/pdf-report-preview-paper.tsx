@@ -115,12 +115,12 @@ export function PdfReportPreviewPaper({
     return list;
   })();
 
-  const securityStanding = securityScore >= 90 ? "A+" : securityScore >= 75 ? "B" : "C";
+  const securityStanding = securityScore >= 80 ? "A" : securityScore >= 70 ? "B" : "C";
 
   return (
-    <div className="max-w-[816px] mx-auto bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden min-h-[1056px] flex flex-col p-12 hover:shadow-2xl hover:scale-[1.005] transition-all duration-300 select-none">
-      {/* Document Header */}
-      <header className="flex justify-between items-start mb-10 select-none">
+    <div className="bg-white border border-slate-200/80 p-8 sm:p-10 rounded-[32px] shadow-xl max-w-4xl mx-auto relative overflow-hidden transition-all duration-300 hover:shadow-2xl">
+      {/* Header section */}
+      <header className="flex items-center justify-between mb-8 pb-6 border-b border-slate-100">
         <div>
           <h1 className="text-xl font-black text-slate-800 tracking-tight mb-1 select-none">
             Website Audit Executive Summary
@@ -140,13 +140,11 @@ export function PdfReportPreviewPaper({
         </div>
       </header>
 
-      <hr className="border-slate-100 mb-10 select-none" />
-
       {/* Grid: Health Score & Metrics Overview */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mb-10">
         {/* Health Score Column */}
         <div className="md:col-span-5 flex flex-col justify-center">
-          <PdfHealthScoreWidget score={overallScore} standing={overallScore >= 80 ? "OPTIMIZED" : "NEEDS ATTENTION"} />
+          <PdfHealthScoreWidget score={overallScore} standing={overallScore >= 80 ? "EXCELLENT" : overallScore >= 70 ? "GOOD" : "NEEDS ATTENTION"} />
         </div>
 
         {/* Breakdown Sub-indices Column */}
@@ -159,42 +157,54 @@ export function PdfReportPreviewPaper({
               SECURITY INDEX
             </p>
             <div className="flex flex-col items-center">
-              <span className="font-display text-3xl font-black text-emerald-600 leading-none">
+              <span className={`font-display text-3xl font-black leading-none ${
+                securityScore >= 80 ? "text-emerald-600" : securityScore >= 70 ? "text-amber-500" : "text-red-500"
+              }`}>
                 {securityStanding}
               </span>
               <div className="w-full bg-slate-200 h-1.5 rounded-full mt-3 overflow-hidden shadow-inner">
-                <div className="bg-emerald-500 h-full rounded-full transition-all" style={{ width: `${securityScore}%` }} />
+                <div className={`h-full rounded-full transition-all ${
+                  securityScore >= 80 ? "bg-emerald-500" : securityScore >= 70 ? "bg-amber-500" : "bg-red-500"
+                }`} style={{ width: `${securityScore}%` }} />
               </div>
               <p className="text-[9px] font-bold text-slate-400 mt-2 select-none">
-                {securityScore >= 90 ? "SSL & security headers verified" : "Security enhancements recommended"}
+                {securityScore >= 80 ? "SSL & security headers verified" : securityScore >= 70 ? "Moderate security configuration" : "Security enhancements recommended"}
               </p>
             </div>
           </div>
+        </div>
+      </div>
 
-          {/* Accessibility Progress Indices */}
-          <div className="col-span-2 bg-slate-50 border border-slate-200/60 p-5 rounded-[24px] select-none">
-            <p className="text-[10px] font-black text-slate-400 tracking-wider mb-4">
-              ACCESSIBILITY (WCAG 2.1) & PERFORMANCE INDEX
-            </p>
-            <div className="space-y-4">
-              <div>
-                <div className="flex justify-between text-[10px] font-bold text-slate-400 mb-1">
-                  <span>Accessibility Score</span>
-                  <span className="text-slate-600">{accessibilityScore}/100</span>
-                </div>
-                <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden shadow-inner">
-                  <div className="bg-blue-600 h-full rounded-full transition-all" style={{ width: `${accessibilityScore}%` }} />
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between text-[10px] font-bold text-slate-400 mb-1">
-                  <span>Performance Load Speed</span>
-                  <span className="text-slate-600">{performanceScore}/100</span>
-                </div>
-                <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden shadow-inner">
-                  <div className="bg-indigo-600 h-full rounded-full transition-all" style={{ width: `${performanceScore}%` }} />
-                </div>
-              </div>
+      {/* Accessibility Progress Indices */}
+      <div className="bg-slate-50 border border-slate-200/60 p-5 rounded-[24px] select-none mb-10">
+        <p className="text-[10px] font-black text-slate-400 tracking-wider mb-4">
+          ACCESSIBILITY (WCAG 2.1) & PERFORMANCE INDEX
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <div className="flex justify-between text-[10px] font-bold text-slate-400 mb-1">
+              <span>Accessibility Score</span>
+              <span className={`font-black ${
+                accessibilityScore >= 80 ? "text-emerald-600" : accessibilityScore >= 70 ? "text-amber-500" : "text-red-500"
+              }`}>{accessibilityScore}/100</span>
+            </div>
+            <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden shadow-inner">
+              <div className={`h-full rounded-full transition-all ${
+                accessibilityScore >= 80 ? "bg-emerald-500" : accessibilityScore >= 70 ? "bg-amber-500" : "bg-red-500"
+              }`} style={{ width: `${accessibilityScore}%` }} />
+            </div>
+          </div>
+          <div>
+            <div className="flex justify-between text-[10px] font-bold text-slate-400 mb-1">
+              <span>Performance Load Speed</span>
+              <span className={`font-black ${
+                performanceScore >= 80 ? "text-emerald-600" : performanceScore >= 70 ? "text-amber-500" : "text-red-500"
+              }`}>{performanceScore}/100</span>
+            </div>
+            <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden shadow-inner">
+              <div className={`h-full rounded-full transition-all ${
+                performanceScore >= 80 ? "bg-emerald-500" : performanceScore >= 70 ? "bg-amber-500" : "bg-red-500"
+              }`} style={{ width: `${performanceScore}%` }} />
             </div>
           </div>
         </div>

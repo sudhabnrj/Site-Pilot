@@ -37,31 +37,31 @@ export function ReportsTable({
   const totalPages = Math.ceil(totalResults / pageSize);
 
   const getScoreInfo = (score: number) => {
-    if (score >= 90) {
+    if (score >= 80) {
       return {
         badgeText: "Optimal",
-        badgeClass: "bg-blue-50 text-blue-600 border-blue-100",
-        ringClass: "border-blue-600 text-blue-600",
+        badgeClass: "bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-900",
+        ringClass: "border-emerald-600 text-emerald-600 dark:text-emerald-400",
       };
     }
-    if (score >= 75) {
+    if (score >= 70) {
       return {
         badgeText: "Good",
-        badgeClass: "bg-emerald-50 text-emerald-600 border-emerald-100",
-        ringClass: "border-emerald-600 text-emerald-600",
+        badgeClass: "bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-950/60 dark:text-amber-400 dark:border-amber-900",
+        ringClass: "border-amber-500 text-amber-500 dark:text-amber-400",
       };
     }
     return {
       badgeText: "Needs Work",
-      badgeClass: "bg-amber-50 text-amber-600 border-amber-100",
-      ringClass: "border-amber-500 text-amber-500",
+      badgeClass: "bg-red-50 text-red-600 border-red-100 dark:bg-red-950/60 dark:text-red-400 dark:border-red-900",
+      ringClass: "border-red-500 text-red-500 dark:text-red-400",
     };
   };
 
   const getMetricBarColor = (val: number) => {
-    if (val >= 90) return "bg-blue-600";
-    if (val >= 75) return "bg-emerald-500";
-    return "bg-amber-500";
+    if (val >= 80) return "bg-emerald-500";
+    if (val >= 70) return "bg-amber-500";
+    return "bg-red-500";
   };
 
   const getAvatarInitials = (domain: string) => {

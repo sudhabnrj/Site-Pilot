@@ -81,8 +81,8 @@ export default function AccessibilityPage() {
   }, [dispatch]);
 
   const score = currentReport ? currentReport.accessibilityScore : 88;
-  const standing = score >= 90 ? "Excellent" : score >= 75 ? "Good" : "Needs Improvement";
-  const standingType: "pass" | "warning" | "fail" = score >= 90 ? "pass" : score >= 75 ? "pass" : "warning";
+  const standing = score >= 80 ? "Excellent" : score >= 70 ? "Good" : "Needs Improvement";
+  const standingType: "pass" | "warning" | "fail" = score >= 80 ? "pass" : score >= 70 ? "warning" : "fail";
 
   const failuresList: AccessibilityFailure[] = useMemo(() => {
     if (!currentReport?.issues?.length) return DEFAULT_FAILURES;

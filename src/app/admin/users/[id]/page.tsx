@@ -75,8 +75,8 @@ const CATEGORY_ICONS: Record<string, any> = {
 };
 
 function ScoreBar({ label, score, icon: Icon }: { label: string; score: number; icon?: any }) {
-  const color = score >= 80 ? "bg-emerald-500" : score >= 60 ? "bg-amber-500" : "bg-red-500";
-  const textColor = score >= 80 ? "text-emerald-600 dark:text-emerald-400" : score >= 60 ? "text-amber-600 dark:text-amber-400" : "text-red-600 dark:text-red-400";
+  const color = score >= 80 ? "bg-emerald-500" : score >= 70 ? "bg-amber-500" : "bg-red-500";
+  const textColor = score >= 80 ? "text-emerald-600 dark:text-emerald-400" : score >= 70 ? "text-amber-600 dark:text-amber-400" : "text-red-600 dark:text-red-400";
   const IconComp = Icon || BarChart3;
   return (
     <div className="space-y-1.5">
@@ -409,7 +409,7 @@ export default function AdminUserDetailPage() {
                           {/* Score + Issues count + Date */}
                           <div className="flex items-center gap-4 shrink-0">
                             <div className="text-center hidden sm:block">
-                              <p className={`text-lg font-black ${audit.overallScore >= 80 ? "text-emerald-600 dark:text-emerald-400" : audit.overallScore >= 60 ? "text-amber-500" : "text-red-500"}`}>
+                              <p className={`text-lg font-black ${audit.overallScore >= 80 ? "text-emerald-600 dark:text-emerald-400" : audit.overallScore >= 70 ? "text-amber-500" : "text-red-500"}`}>
                                 {audit.overallScore}
                               </p>
                               <p className="text-[9px] font-bold text-slate-400 uppercase">Score</p>

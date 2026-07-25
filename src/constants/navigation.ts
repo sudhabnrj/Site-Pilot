@@ -10,6 +10,7 @@ export const SIDEBAR_NAV_ITEMS: NavItem[] = [
   { label: "Websites", icon: "Globe", href: "/websites" },
   { label: "Reports", icon: "BarChart3", href: "/reports" },
   { label: "AI Insights", icon: "Brain", href: "/ai-insights" },
+  { label: "AI Design Audit", icon: "Layers", href: "/design-audit" },
   { label: "Performance", icon: "Gauge", href: "/performance" },
   { label: "SEO", icon: "Search", href: "/seo" },
   { label: "Accessibility", icon: "Accessibility", href: "/accessibility" },

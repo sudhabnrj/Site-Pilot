@@ -38,7 +38,8 @@ export function SeoGaugeCard({
           />
           {/* Progress Arc */}
           <path
-            className="fill-none stroke-blue-600 stroke-[10] stroke-linecap-round transition-all duration-1000 ease-out"
+            className="fill-none stroke-[10] stroke-linecap-round transition-all duration-1000 ease-out"
+            stroke={animatedScore >= 80 ? "#10b981" : animatedScore >= 70 ? "#f59e0b" : "#ef4444"}
             d="M 10 50 A 40 40 0 0 1 90 50"
             strokeDasharray={`${arcLength} ${arcLength}`}
             strokeDashoffset={dashOffset}

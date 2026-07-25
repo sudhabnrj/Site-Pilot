@@ -187,8 +187,8 @@ export default function MobilePage() {
           </div>
           <MobileUsabilityScore
             score={score}
-            standing={score >= 85 ? "Excellent" : "Needs Attention"}
-            standingType={score >= 85 ? "good" : "error"}
+            standing={score >= 80 ? "Excellent" : score >= 70 ? "Good" : "Needs Attention"}
+            standingType={score >= 80 ? "good" : score >= 70 ? "warning" : "error"}
             details={`${issuesList.length} mobile usability flags`}
           />
         </section>

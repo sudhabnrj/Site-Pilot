@@ -6,6 +6,7 @@ interface ProgressRingProps {
   size?: number;
   strokeWidth?: number;
   className?: string;
+  strokeClassName?: string;
   children?: React.ReactNode;
 }
 
@@ -15,6 +16,7 @@ export function ProgressRing({
   size = 192,
   strokeWidth = 12,
   className,
+  strokeClassName,
   children,
 }: ProgressRingProps) {
   const radius = (size - strokeWidth) / 2;
@@ -41,7 +43,7 @@ export function ProgressRing({
           fill="transparent"
           stroke="currentColor"
           strokeWidth={strokeWidth}
-          className="text-slate-200"
+          className="text-slate-200 dark:text-slate-800"
         />
         <circle
           cx={center}
@@ -53,7 +55,7 @@ export function ProgressRing({
           strokeDasharray={circumference}
           strokeDashoffset={strokeDashoffset}
           strokeLinecap="round"
-          className="text-primary transition-[stroke-dashoffset] duration-700 ease-out"
+          className={cn(strokeClassName || "text-primary", "transition-[stroke-dashoffset] duration-700 ease-out")}
         />
       </svg>
       {children && (

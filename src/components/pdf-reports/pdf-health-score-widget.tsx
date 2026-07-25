@@ -48,7 +48,7 @@ export function PdfHealthScoreWidget({
             cy="96"
             fill="transparent"
             r="88"
-            stroke="#004ac6"
+            stroke={animatedScore >= 80 ? "#10b981" : animatedScore >= 70 ? "#f59e0b" : "#ef4444"}
             strokeDasharray={`${circumference} ${circumference}`}
             strokeDashoffset={dashOffset}
             strokeLinecap="round"
@@ -60,7 +60,9 @@ export function PdfHealthScoreWidget({
           <span className="font-display text-[60px] font-black text-slate-800 tracking-tight leading-none">
             {animatedScore}
           </span>
-          <span className="text-[10px] font-black text-blue-600 mt-1 uppercase tracking-widest">
+          <span className={`text-[10px] font-black mt-1 uppercase tracking-widest ${
+            animatedScore >= 80 ? "text-emerald-600" : animatedScore >= 70 ? "text-amber-500" : "text-red-500"
+          }`}>
             {standing}
           </span>
         </div>

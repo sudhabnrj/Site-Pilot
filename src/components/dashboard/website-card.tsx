@@ -42,7 +42,7 @@ export function WebsiteCard({ website, onRefresh, onMore, onStop, onDelete, onVi
   }, [menuOpen]);
 
   const getScoreColor = (score: number) => {
-    if (score >= 90) return "text-emerald-600";
+    if (score >= 80) return "text-emerald-600";
     if (score >= 70) return "text-amber-500";
     return "text-red-500";
   };

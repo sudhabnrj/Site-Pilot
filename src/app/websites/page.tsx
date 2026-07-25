@@ -366,7 +366,7 @@ export default function WebsitesPage() {
                             {isMasked ? `${site.domain.slice(0, 3)}***${site.domain.includes(".") ? site.domain.slice(site.domain.indexOf(".")) : ""}` : site.domain}
                           </td>
                           <td className={`py-4 font-black text-sm ${
-                            isMasked ? "text-slate-400" : site.score >= 90 ? "text-emerald-600" : site.score >= 70 ? "text-amber-500" : "text-red-500"
+                            isMasked ? "text-slate-400" : site.score >= 80 ? "text-emerald-600" : site.score >= 70 ? "text-amber-500" : "text-red-500"
                           }`}>{isMasked ? "--" : site.score}</td>
                           <td className="py-4 text-xs uppercase font-bold text-slate-600">
                             {isMasked ? (

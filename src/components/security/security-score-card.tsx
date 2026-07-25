@@ -51,7 +51,7 @@ export function SecurityScoreCard({
             cy="96"
             fill="transparent"
             r="88"
-            stroke="#004ac6"
+            stroke={scorePercent >= 80 ? "#10b981" : scorePercent >= 70 ? "#f59e0b" : "#ef4444"}
             strokeDasharray={`${circumference} ${circumference}`}
             strokeDashoffset={animatedOffset}
             strokeLinecap="round"
@@ -60,10 +60,12 @@ export function SecurityScoreCard({
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center select-none">
-          <span className="font-display text-[60px] font-black text-slate-800 tracking-tight leading-none">
+          <span className="font-display text-[60px] font-black text-slate-800 dark:text-white tracking-tight leading-none">
             {scoreGrade}
           </span>
-          <span className="text-[10px] font-black text-emerald-600 uppercase tracking-wider mt-1.5">
+          <span className={`text-[10px] font-black uppercase tracking-wider mt-1.5 ${
+            scorePercent >= 80 ? "text-emerald-600 dark:text-emerald-400" : scorePercent >= 70 ? "text-amber-500 dark:text-amber-400" : "text-red-500 dark:text-red-400"
+          }`}>
             {standing}
           </span>
         </div>

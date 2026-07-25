@@ -58,7 +58,7 @@ export function MobileUsabilityScore({
             cy="48"
             fill="transparent"
             r="40"
-            stroke={standingType === "error" ? "#ef4444" : "#004ac6"}
+            stroke={standingType === "good" ? "#10b981" : standingType === "warning" ? "#f59e0b" : "#ef4444"}
             strokeDasharray={`${circumference} ${circumference}`}
             strokeDashoffset={dashOffset}
             strokeLinecap="round"

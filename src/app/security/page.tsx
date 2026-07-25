@@ -55,8 +55,8 @@ export default function SecurityPage() {
 
   const score = currentReport ? currentReport.securityScore : 95;
   const domain = currentReport?.domain || "example.com";
-  const grade = score >= 90 ? "A+" : score >= 80 ? "A" : score >= 70 ? "B" : "C";
-  const standing = score >= 90 ? "Excellent" : score >= 75 ? "Good" : "Needs Attention";
+  const grade = score >= 80 ? "A" : score >= 70 ? "B" : "C";
+  const standing = score >= 80 ? "Excellent" : score >= 70 ? "Good" : "Needs Attention";
 
   const securityIssues = currentReport?.issues?.filter((i) => i.category === "Security") || [];
   const criticalCount = securityIssues.filter((i) => i.priority === "critical").length;

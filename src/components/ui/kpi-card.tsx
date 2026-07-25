@@ -42,17 +42,44 @@ export function KpiCard({ metric, className }: KpiCardProps) {
     ? (metric.value / metric.maxValue) * 100
     : metric.value;
 
+  const scoreVal = typeof metric.value === "number" ? metric.value : 0;
+  const isScoreMetric = metric.maxValue === 100 || ["overall-score", "performance", "seo", "accessibility"].includes(metric.id);
+
+  const valueColor = isScoreMetric
+    ? scoreVal >= 80
+      ? "text-emerald-600 dark:text-emerald-400"
+      : scoreVal >= 70
+      ? "text-amber-500 dark:text-amber-400"
+      : "text-red-500 dark:text-red-400"
+    : styles.valueColor;
+
+  const progressColor = isScoreMetric
+    ? scoreVal >= 80
+      ? "bg-emerald-500"
+      : scoreVal >= 70
+      ? "bg-amber-500"
+      : "bg-red-500"
+    : styles.progressColor;
+
+  const iconBg = isScoreMetric
+    ? scoreVal >= 80
+      ? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400"
+      : scoreVal >= 70
+      ? "bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400"
+      : "bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-400"
+    : styles.iconBg;
+
   return (
     <GlassCard hoverable className={cn("flex flex-col gap-3", className)}>
       <div className="flex items-start justify-between">
-        <div className={cn("rounded-xl p-2", styles.iconBg)}>
+        <div className={cn("rounded-xl p-2", iconBg)}>
           {IconComponent && <IconComponent className="h-5 w-5" aria-hidden="true" />}
         </div>
         <div className="text-right">
           <span className="text-xs font-medium tracking-wide text-muted-foreground">
             {metric.label}
           </span>
-          <div className={cn("text-3xl font-bold tracking-tight", styles.valueColor)}>
+          <div className={cn("text-3xl font-bold tracking-tight", valueColor)}>
             {metric.value}
             {metric.maxValue && (
               <span className="text-xs font-normal text-muted-foreground">/{metric.maxValue}</span>
@@ -67,9 +94,9 @@ export function KpiCard({ metric, className }: KpiCardProps) {
         label={metric.trend.label}
       />
 
-      <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-slate-200">
+      <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
         <div
-          className={cn("h-full rounded-full transition-all duration-700", styles.progressColor)}
+          className={cn("h-full rounded-full transition-all duration-700", progressColor)}
           style={{ width: `${progressPercent}%` }}
           role="progressbar"
           aria-valuenow={metric.value}

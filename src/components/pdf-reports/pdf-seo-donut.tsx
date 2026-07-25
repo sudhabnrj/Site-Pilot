@@ -51,7 +51,7 @@ export function PdfSeoDonut({
               cy="40"
               fill="transparent"
               r="34"
-              stroke="#645efb"
+              stroke={animatedScore >= 80 ? "#10b981" : animatedScore >= 70 ? "#f59e0b" : "#ef4444"}
               strokeDasharray={`${circumference} ${circumference}`}
               strokeDashoffset={dashOffset}
               strokeLinecap="round"
